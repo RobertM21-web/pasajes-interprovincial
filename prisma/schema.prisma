@@ -1,0 +1,252 @@
+// ============================================
+// SISTEMA DE GESTIÓN Y VENTA DE PASAJES
+// Cooperativa de Transporte Interprovincial
+// Base de datos: SQL Server
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+// ============================================
+// USUARIOS Y AUTENTICACIÓN
+// ============================================
+
+model Usuario {
+  id            String    @id @default(uuid())
+  nombre        String    @db.NVarChar(100)
+  email         String    @unique @db.NVarChar(150)
+  passwordHash  String    @map("password_hash") @db.NVarChar(255)
+  cedula        String?   @unique @db.NVarChar(13)
+  telefono      String?   @db.NVarChar(15)
+  rol           String    @default("CLIENTE") @db.NVarChar(20) // ADMIN, OFICINISTA, CLIENTE
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relaciones
+  boletosComprados  Boleto[]       @relation("CompradoPor")
+  boletosVendidos   Boleto[]       @relation("VendidoPor")
+  hojasRuta         HojaRuta[]
+  rutasHabilitadas  Ruta[]
+  notificaciones    Notificacion[]
+
+  @@map("usuarios")
+}
+
+// ============================================
+// CONFIGURACIÓN DE LA COOPERATIVA
+// ============================================
+
+model Cooperativa {
+  id               String  @id @default(uuid())
+  nombre           String  @db.NVarChar(100)
+  logoUrl          String? @map("logo_url") @db.NVarChar(500)
+  colorPrimario    String? @map("color_primario") @db.NVarChar(7)
+  colorSecundario  String? @map("color_secundario") @db.NVarChar(7)
+  facebook         String? @db.NVarChar(255)
+  instagram        String? @db.NVarChar(255)
+  twitter          String? @db.NVarChar(255)
+  whatsapp         String? @db.NVarChar(20)
+  emailSoporte     String? @map("email_soporte") @db.NVarChar(150)
+  telefonoSoporte  String? @map("telefono_soporte") @db.NVarChar(20)
+  direccion        String? @db.NVarChar(255)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("cooperativa")
+}
+
+// ============================================
+// BUSES Y CONFIGURACIÓN DE ASIENTOS
+// ============================================
+
+model Bus {
+  id              String   @id @default(uuid())
+  numero          String   @unique @db.NVarChar(10)
+  placa           String   @unique @db.NVarChar(10)
+  marcaChasis     String   @map("marca_chasis") @db.NVarChar(50)
+  marcaCarroceria String   @map("marca_carroceria") @db.NVarChar(50)
+  fotografiaUrl   String?  @map("fotografia_url") @db.NVarChar(500)
+  totalAsientos   Int      @map("total_asientos")
+  activo          Boolean  @default(true)
+  enTerminal      Boolean  @default(true) @map("en_terminal")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  categorias CategoriaAsiento[]
+  rutas      Ruta[]
+
+  @@map("buses")
+}
+
+model CategoriaAsiento {
+  id          String  @id @default(uuid())
+  busId       String  @map("bus_id")
+  nombre      String  @db.NVarChar(50) // Normal, VIP, Discapacidad, etc.
+  precioBase  Decimal @map("precio_base") @db.Decimal(10, 2)
+  cantidad    Int
+  descripcion String? @db.NVarChar(200)
+
+  // Relaciones
+  bus      Bus       @relation(fields: [busId], references: [id], onDelete: Cascade)
+  asientos Asiento[]
+
+  @@map("categorias_asiento")
+}
+
+model Asiento {
+  id          String @id @default(uuid())
+  categoriaId String @map("categoria_id")
+  numero      Int
+  fila        Int
+  posicion    String @db.NVarChar(10) // VENTANA, PASILLO, MEDIO
+  etiqueta    String @db.NVarChar(5)  // Ej: "1A", "2B"
+
+  // Relaciones
+  categoria CategoriaAsiento @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  boletos   Boleto[]
+
+  @@unique([categoriaId, numero])
+  @@map("asientos")
+}
+
+// ============================================
+// FRECUENCIAS Y RUTAS
+// ============================================
+
+model Frecuencia {
+  id             String   @id @default(uuid())
+  ciudadOrigen   String   @map("ciudad_origen") @db.NVarChar(100)
+  ciudadDestino  String   @map("ciudad_destino") @db.NVarChar(100)
+  hora           String   @db.NVarChar(5) // "14:00"
+  resolucionAnt  String?  @map("resolucion_ant") @db.NVarChar(100)
+  esDirecta      Boolean  @default(false) @map("es_directa")
+  activa         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  paradasIntermedias ParadaIntermedia[]
+  rutas              Ruta[]
+
+  @@map("frecuencias")
+}
+
+model ParadaIntermedia {
+  id             String  @id @default(uuid())
+  frecuenciaId   String  @map("frecuencia_id")
+  ciudad         String  @db.NVarChar(100)
+  orden          Int
+  precioTramo    Decimal @map("precio_tramo") @db.Decimal(10, 2)
+  tiempoEstimado Int?    @map("tiempo_estimado") // minutos desde origen
+
+  // Relaciones
+  frecuencia Frecuencia @relation(fields: [frecuenciaId], references: [id], onDelete: Cascade)
+
+  @@unique([frecuenciaId, orden])
+  @@map("paradas_intermedias")
+}
+
+// ============================================
+// HOJA DE RUTA Y RUTAS
+// ============================================
+
+model HojaRuta {
+  id           String   @id @default(uuid())
+  oficinistaId String   @map("oficinista_id")
+  fechaInicio  DateTime @map("fecha_inicio") @db.Date
+  fechaFin     DateTime @map("fecha_fin") @db.Date
+  tipo         String   @default("SEMANAL") @db.NVarChar(10) // SEMANAL, MENSUAL
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  oficinista Usuario @relation(fields: [oficinistaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  rutas      Ruta[]
+
+  @@map("hojas_ruta")
+}
+
+model Ruta {
+  id           String   @id @default(uuid())
+  frecuenciaId String   @map("frecuencia_id")
+  busId        String   @map("bus_id")
+  oficinistaId String   @map("oficinista_id")
+  hojaRutaId   String?  @map("hoja_ruta_id")
+  fecha        DateTime @db.Date
+  estado       String   @default("HABILITADA") @db.NVarChar(20) // HABILITADA, EN_CURSO, COMPLETADA, CANCELADA
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  frecuencia Frecuencia @relation(fields: [frecuenciaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bus        Bus        @relation(fields: [busId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  oficinista Usuario    @relation(fields: [oficinistaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hojaRuta   HojaRuta?  @relation(fields: [hojaRutaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  boletos    Boleto[]
+
+  @@unique([busId, fecha, frecuenciaId])
+  @@map("rutas")
+}
+
+// ============================================
+// BOLETOS Y VENTAS
+// ============================================
+
+model Boleto {
+  id               String  @id @default(uuid())
+  rutaId           String  @map("ruta_id")
+  asientoId        String  @map("asiento_id")
+  usuarioId        String? @map("usuario_id")
+  vendidoPorId     String? @map("vendido_por_id")
+  pasajeroNombre   String  @map("pasajero_nombre") @db.NVarChar(150)
+  pasajeroCedula   String  @map("pasajero_cedula") @db.NVarChar(13)
+  tipoPasajero     String  @default("NORMAL") @map("tipo_pasajero") @db.NVarChar(20) // NORMAL, MENOR_EDAD, TERCERA_EDAD, DISCAPACIDAD
+  precioBase       Decimal @map("precio_base") @db.Decimal(10, 2)
+  descuento        Decimal @default(0) @db.Decimal(5, 2) // Porcentaje: 0 o 50
+  precioFinal      Decimal @map("precio_final") @db.Decimal(10, 2)
+  codigoQr         String? @map("codigo_qr") @db.NVarChar(500)
+  estado           String  @default("PENDIENTE") @db.NVarChar(20) // PENDIENTE, PAGADO, ABORDADO, CANCELADO, NO_ABORDADO
+  comprobanteUrl   String? @map("comprobante_url") @db.NVarChar(500)
+  metodoPago       String  @default("TRANSFERENCIA") @map("metodo_pago") @db.NVarChar(20) // TRANSFERENCIA, DEPOSITO, PAYPAL
+  canalVenta       String  @map("canal_venta") @db.NVarChar(10) // ONLINE, OFICINA
+  origenTramo      String  @map("origen_tramo") @db.NVarChar(100)
+  destinoTramo     String  @map("destino_tramo") @db.NVarChar(100)
+  abordado         Boolean @default(false)
+  fechaAbordaje    DateTime? @map("fecha_abordaje")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  // Relaciones
+  ruta       Ruta     @relation(fields: [rutaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  asiento    Asiento  @relation(fields: [asientoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuario    Usuario? @relation("CompradoPor", fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vendidoPor Usuario? @relation("VendidoPor", fields: [vendidoPorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([rutaId, asientoId])
+  @@map("boletos")
+}
+
+// ============================================
+// NOTIFICACIONES
+// ============================================
+
+model Notificacion {
+  id        String   @id @default(uuid())
+  usuarioId String   @map("usuario_id")
+  titulo    String   @db.NVarChar(200)
+  mensaje   String   @db.NVarChar(1000)
+  tipo      String   @default("INFO") @db.NVarChar(20) // INFO, PAGO_PENDIENTE, PAGO_APROBADO, BOLETO_GENERADO, RUTA_CANCELADA
+  leida     Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("notificaciones")
+}
