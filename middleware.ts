@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 // Rutas protegidas por rol
 const roleRoutes: Record<string, string> = {
@@ -11,45 +12,13 @@ const roleRoutes: Record<string, string> = {
 // Rutas públicas que no necesitan autenticación
 const publicRoutes = ["/login"];
 
-/**
- * Decodifica el payload de un JWT sin verificar la firma.
- * Esto es un check optimista (client-side) — la verificación
- * real de la firma la hace NextAuth en el servidor.
- */
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = parts[1];
-    const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(decoded);
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Obtiene el rol del usuario desde la cookie de sesión de NextAuth.
- * NextAuth almacena el JWT en la cookie "next-auth.session-token"
- * (o "__Secure-next-auth.session-token" en producción con HTTPS).
- */
-function getUserRolFromRequest(request: NextRequest): string | null {
-  const token =
-    request.cookies.get("next-auth.session-token")?.value ||
-    request.cookies.get("__Secure-next-auth.session-token")?.value;
-
-  if (!token) return null;
-
-  const payload = decodeJwtPayload(token);
-  if (!payload) return null;
-
-  return (payload.rol as string) || null;
-}
-
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const rol = getUserRolFromRequest(request);
-  const isAuthenticated = !!rol;
+  
+  // Usar getToken de NextAuth para desencriptar correctamente la cookie JWE
+  const token = await getToken({ req: request });
+  const rol = token?.rol as string | undefined;
+  const isAuthenticated = !!token;
 
   // 1. Ruta raíz "/" → redirigir según autenticación
   if (pathname === "/") {
@@ -93,7 +62,6 @@ export function middleware(request: NextRequest) {
 }
 
 // Matcher: ejecutar middleware solo en rutas relevantes
-// Excluye: API routes, archivos estáticos, imágenes, favicon
 export const config = {
   matcher: [
     "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
