@@ -13,6 +13,51 @@ datasource db {
 }
 
 // ============================================
+// ROLES Y PERMISOS
+// ============================================
+
+model Rol {
+  id          String   @id @default(uuid())
+  nombre      String   @unique @db.NVarChar(30) // ADMIN, OFICINISTA, CLIENTE
+  descripcion String?  @db.NVarChar(200)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  usuarios Usuario[]
+  permisos RolPermiso[]
+
+  @@map("roles")
+}
+
+model Permiso {
+  id          String  @id @default(uuid())
+  clave       String  @unique @db.NVarChar(50) // Ej: "crear_buses", "vender_boletos", "habilitar_rutas"
+  nombre      String  @db.NVarChar(100)        // Ej: "Crear buses", "Vender boletos"
+  descripcion String? @db.NVarChar(200)
+  modulo      String  @db.NVarChar(30)         // admin, oficinista, cliente, config
+
+  // Relaciones
+  roles RolPermiso[]
+
+  @@map("permisos")
+}
+
+model RolPermiso {
+  id        String @id @default(uuid())
+  rolId     String @map("rol_id")
+  permisoId String @map("permiso_id")
+
+  // Relaciones
+  rol     Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  permiso Permiso @relation(fields: [permisoId], references: [id], onDelete: Cascade)
+
+  @@unique([rolId, permisoId])
+  @@map("roles_permisos")
+}
+
+// ============================================
 // USUARIOS Y AUTENTICACIÓN
 // ============================================
 
@@ -23,12 +68,13 @@ model Usuario {
   passwordHash  String    @map("password_hash") @db.NVarChar(255)
   cedula        String?   @unique @db.NVarChar(13)
   telefono      String?   @db.NVarChar(15)
-  rol           String    @default("CLIENTE") @db.NVarChar(20) // ADMIN, OFICINISTA, CLIENTE
+  rolId         String    @map("rol_id")
   activo        Boolean   @default(true)
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   // Relaciones
+  rol               Rol            @relation(fields: [rolId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   boletosComprados  Boleto[]       @relation("CompradoPor")
   boletosVendidos   Boleto[]       @relation("VendidoPor")
   hojasRuta         HojaRuta[]
@@ -39,12 +85,12 @@ model Usuario {
 }
 
 // ============================================
-// CONFIGURACIÓN DE LA COOPERATIVA
+// CONFIGURACIÓN DE LA APLICACIÓN
 // ============================================
 
-model Cooperativa {
+model Configuracion {
   id               String  @id @default(uuid())
-  nombre           String  @db.NVarChar(100)
+  nombreCooperativa String @map("nombre_cooperativa") @db.NVarChar(150)
   logoUrl          String? @map("logo_url") @db.NVarChar(500)
   colorPrimario    String? @map("color_primario") @db.NVarChar(7)
   colorSecundario  String? @map("color_secundario") @db.NVarChar(7)
@@ -58,7 +104,7 @@ model Cooperativa {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  @@map("cooperativa")
+  @@map("configuracion")
 }
 
 // ============================================
@@ -117,7 +163,7 @@ model Asiento {
 }
 
 // ============================================
-// FRECUENCIAS Y RUTAS
+// FRECUENCIAS Y PARADAS
 // ============================================
 
 model Frecuencia {
@@ -161,8 +207,8 @@ model HojaRuta {
   id           String   @id @default(uuid())
   oficinistaId String   @map("oficinista_id")
   fechaInicio  DateTime @map("fecha_inicio") @db.Date
-  fechaFin     DateTime @map("fecha_fin") @db.Date
   tipo         String   @default("SEMANAL") @db.NVarChar(10) // SEMANAL, MENSUAL
+  habilitada   Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relaciones
@@ -208,7 +254,7 @@ model Boleto {
   pasajeroCedula   String  @map("pasajero_cedula") @db.NVarChar(13)
   tipoPasajero     String  @default("NORMAL") @map("tipo_pasajero") @db.NVarChar(20) // NORMAL, MENOR_EDAD, TERCERA_EDAD, DISCAPACIDAD
   precioBase       Decimal @map("precio_base") @db.Decimal(10, 2)
-  descuento        Decimal @default(0) @db.Decimal(5, 2) // Porcentaje: 0 o 50
+  descuento        Decimal @default(0) @db.Decimal(5, 2)
   precioFinal      Decimal @map("precio_final") @db.Decimal(10, 2)
   codigoQr         String? @map("codigo_qr") @db.NVarChar(500)
   estado           String  @default("PENDIENTE") @db.NVarChar(20) // PENDIENTE, PAGADO, ABORDADO, CANCELADO, NO_ABORDADO
