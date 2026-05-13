@@ -45,7 +45,7 @@ export default function SelectorAsientos() {
                     ? "bg-red-200 text-red-700 cursor-not-allowed"
                     : isSelected
                     ? "bg-amber-500 text-white scale-105"
-                    : "bg-gray-100 hover:bg-amber-100"
+                    : "bg-gray-100 text-gray-800 hover:bg-amber-100"
                 }
               `}
             >
@@ -55,7 +55,7 @@ export default function SelectorAsientos() {
         })}
       </div>
 
-      <div className="flex gap-6 mt-8 justify-center text-sm">
+      <div className="flex gap-6 mt-8 justify-center text-sm text-gray-700">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-gray-100 border" />
           Disponible
@@ -74,7 +74,7 @@ export default function SelectorAsientos() {
 
       {selectedSeat && (
         <div className="mt-6 text-center">
-          <p className="text-lg font-medium">
+          <p className="text-lg font-medium text-gray-800">
             Asiento seleccionado:{" "}
             <span className="text-amber-600">{selectedSeat}</span>
           </p>
