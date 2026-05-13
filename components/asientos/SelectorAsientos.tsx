@@ -64,6 +64,7 @@ const seats = floor === 1 ? firstFloorSeats : secondFloorSeats;
       <div className="grid grid-cols-5 gap-4">
         {seats.map((seat) => {
   const isSelected = selectedSeat === seat.id;
+  const seatPrice = seat.type === "vip" ? 18 : 12.5;
       const seatStyle =
       seat.occupied
         ? "bg-red-200 text-red-700 cursor-not-allowed"
@@ -93,6 +94,9 @@ const seats = floor === 1 ? firstFloorSeats : secondFloorSeats;
           `}
         >
           {seat.number}
+          <p className="text-xs mt-1">
+            ${seatPrice}
+          </p>
         </button>
       </>
     );
@@ -115,6 +119,9 @@ const seats = floor === 1 ? firstFloorSeats : secondFloorSeats;
       `}
     >
       {seat.number}
+      <p className="text-xs mt-1">
+        ${seatPrice}
+      </p>
     </button>
   );
 })}
@@ -137,9 +144,9 @@ const seats = floor === 1 ? firstFloorSeats : secondFloorSeats;
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-purple-100 border" />
-          VIP
-        </div>
+        <div className="w-4 h-4 rounded bg-purple-100 border" />
+        VIP
+      </div>
       </div>
 
       {selectedSeat && (
@@ -152,7 +159,10 @@ const seats = floor === 1 ? firstFloorSeats : secondFloorSeats;
             </p>
 
             <p className="text-sm text-gray-600 mt-1">
-            Precio estimado: <span className="font-semibold">$12.50</span>
+            Precio del asiento: <span className="font-semibold">$
+{seats.find((seat) => seat.id === selectedSeat)?.type === "vip"
+  ? "18.00"
+  : "12.50"}</span>
             </p>
 
             <button className="mt-4 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all duration-200">
