@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import Link from "next/link";
+
 export default function CompraOnlinePage() {
     const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   return (
@@ -67,6 +69,12 @@ export default function CompraOnlinePage() {
                 <div>
                     <p className="font-semibold text-black">Ruta seleccionada:</p>
                     <p>{selectedRoute}</p>
+                    <Link
+                    href="/cliente/selector-asientos"
+                    className="inline-block mt-4 px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all"
+                    >
+                    Elegir asientos
+                    </Link>
                 </div>
                 ) : (
                 <p>No has seleccionado un viaje todavía.</p>
