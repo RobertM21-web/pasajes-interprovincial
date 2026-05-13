@@ -19,6 +19,7 @@ const availableRoutes = [
 
 export default function CompraOnlinePage() {
     const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+    
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-5xl mx-auto">
@@ -58,11 +59,21 @@ export default function CompraOnlinePage() {
             </div>
 
             <div className="mt-6 space-y-4">
-             {availableRoutes.map((route) => (
-                <div
+             {availableRoutes.map((route) => {
+                const isSelected = selectedRoute === route.name;
+
+                return (
+                    <div
                     key={route.name}
-                    className="border rounded-xl p-4 hover:border-amber-400 transition-all"
-                >
+                    className={`
+                        border rounded-xl p-4 transition-all
+                        ${
+                        isSelected
+                            ? "border-amber-500 bg-amber-50 shadow-md"
+                            : "hover:border-amber-400"
+                        }
+                    `}
+                    >
                     <div className="flex justify-between items-center">
                     <div>
                         <h3 className="font-semibold text-black">
@@ -81,14 +92,22 @@ export default function CompraOnlinePage() {
 
                         <button
                         onClick={() => setSelectedRoute(route.name)}
-                        className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm"
+                        className={`
+                            mt-2 px-4 py-2 rounded-lg text-sm text-white transition-all
+                            ${
+                                isSelected
+                                ? "bg-green-600"
+                                : "bg-amber-500 hover:bg-amber-600"
+                            }
+                        `}
                         >
-                        Seleccionar
+                        {isSelected ? "Seleccionado" : "Seleccionar"}
                         </button>
                     </div>
                     </div>
                 </div>
-                ))}
+                );
+                })}
             </div>
           </div>
 
