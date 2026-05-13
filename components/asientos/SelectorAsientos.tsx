@@ -6,18 +6,21 @@ type Seat = {
   id: number;
   number: string;
   occupied: boolean;
+  type: "normal" | "vip";
 };
 
 const firstFloorSeats: Seat[] = Array.from({ length: 16 }, (_, i) => ({
   id: i + 1,
   number: `P1-${i + 1}`,
   occupied: [3, 7, 12].includes(i + 1),
+  type: i < 4 ? "vip" : "normal",
 }));
 
 const secondFloorSeats: Seat[] = Array.from({ length: 24 }, (_, i) => ({
   id: i + 101,
   number: `P2-${i + 1}`,
   occupied: [104, 110, 118].includes(i + 101),
+  type: i < 6 ? "vip" : "normal",
 }));
 
 export default function SelectorAsientos() {
@@ -61,6 +64,14 @@ const seats = floor === 1 ? firstFloorSeats : secondFloorSeats;
       <div className="grid grid-cols-5 gap-4">
         {seats.map((seat) => {
   const isSelected = selectedSeat === seat.id;
+      const seatStyle =
+      seat.occupied
+        ? "bg-red-200 text-red-700 cursor-not-allowed"
+        : isSelected
+        ? "bg-amber-500 text-white scale-105"
+        : seat.type === "vip"
+        ? "bg-purple-100 text-purple-800 hover:bg-purple-200"
+        : "bg-gray-100 text-gray-800 hover:bg-amber-100";
 
   if (seat.id % 4 === 3) {
     return (
@@ -71,8 +82,7 @@ const seats = floor === 1 ? firstFloorSeats : secondFloorSeats;
           key={seat.id}
           disabled={seat.occupied}
           onClick={() => setSelectedSeat(seat.id)}
-          className={`
-            h-16 rounded-xl font-semibold transition-all duration-200
+          className={`h-16 rounded-xl font-semibold transition-all duration-200 ${seatStyle}
             ${
               seat.occupied
                 ? "bg-red-200 text-red-700 cursor-not-allowed"
@@ -124,6 +134,11 @@ const seats = floor === 1 ? firstFloorSeats : secondFloorSeats;
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-red-200" />
           Ocupado
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-purple-100 border" />
+          VIP
         </div>
       </div>
 
