@@ -66,16 +66,49 @@ export default function CompraOnlinePage() {
 
             <div className="space-y-3 text-gray-700">
                             {selectedRoute ? (
-                <div>
-                    <p className="font-semibold text-black">Ruta seleccionada:</p>
-                    <p>{selectedRoute}</p>
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <p className="font-semibold text-black text-lg">
+                        Ruta seleccionada
+                    </p>
+
+                    <div className="mt-3 space-y-2 text-gray-700">
+                        <p>
+                        <span className="font-medium">Trayecto:</span>{" "}
+                        {selectedRoute}
+                        </p>
+
+                        <p>
+                        <span className="font-medium">Fecha:</span>{" "}
+                        15/05/2026
+                        </p>
+
+                        <p>
+                        <span className="font-medium">Hora:</span>{" "}
+                        {selectedRoute.includes("Quito") ? "14:00" : "22:00"}
+                        </p>
+
+                        <p>
+                        <span className="font-medium">Bus:</span>{" "}
+                        Bus Ejecutivo
+                        </p>
+
+                        <p>
+                        <span className="font-medium">Precio:</span>{" "}
+                        <span className="text-amber-600 font-bold">
+                            {selectedRoute.includes("Quito")
+                            ? "$12.50"
+                            : "$18.00"}
+                        </span>
+                        </p>
+                    </div>
+
                     <Link
-                    href="/cliente/selector-asientos"
-                    className="inline-block mt-4 px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all"
+                        href="/cliente/selector-asientos"
+                        className="inline-block mt-5 px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all"
                     >
-                    Elegir asientos
+                        Elegir asientos
                     </Link>
-                </div>
+                    </div>
                 ) : (
                 <p>No has seleccionado un viaje todavía.</p>
                 )}
