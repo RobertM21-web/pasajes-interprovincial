@@ -99,11 +99,21 @@ export default function SelectorAsientos() {
       </div>
 
       {selectedSeat && (
-        <div className="mt-6 text-center">
-          <p className="text-lg font-medium text-gray-800">
-            Asiento seleccionado:{" "}
-            <span className="text-amber-600">{selectedSeat}</span>
-          </p>
+        <div className="mt-6 text-center bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-lg font-medium text-gray-800">
+            Asiento seleccionado:
+            <span className="ml-2 text-amber-600 font-bold">
+                {selectedSeat}
+            </span>
+            </p>
+
+            <p className="text-sm text-gray-600 mt-1">
+            Precio estimado: <span className="font-semibold">$12.50</span>
+            </p>
+
+            <button className="mt-4 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all duration-200">
+            Continuar compra
+            </button>
         </div>
       )}
     </div>
