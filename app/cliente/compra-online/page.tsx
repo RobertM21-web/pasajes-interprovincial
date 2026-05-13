@@ -19,7 +19,7 @@ const availableRoutes = [
 
 export default function CompraOnlinePage() {
     const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
-    
+    const [purchaseConfirmed, setPurchaseConfirmed] = useState(false);
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-5xl mx-auto">
@@ -204,9 +204,38 @@ export default function CompraOnlinePage() {
                         Elegir asientos
                     </Link>
 
-                    <button className="w-full mt-4 px-5 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-all">
+                    <button
+                        onClick={() => setPurchaseConfirmed(true)}
+                        className="w-full mt-4 px-5 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-all"
+                        >
                         Confirmar compra
                     </button>
+                    {purchaseConfirmed && (
+                        <div className="mt-6 bg-white border-2 border-dashed border-amber-400 rounded-2xl p-5 shadow">
+                            <h3 className="text-xl font-bold text-center text-black mb-4">
+                            Boleto Generado
+                            </h3>
+
+                            <div className="space-y-2 text-gray-700">
+                            <p>
+                                <span className="font-semibold">Código:</span>{" "}
+                                TICKET-2026-001
+                            </p>
+
+                            <p>
+                                <span className="font-semibold">Ruta:</span>{" "}
+                                {selectedRoute}
+                            </p>
+
+                            <p>
+                                <span className="font-semibold">Estado:</span>{" "}
+                                <span className="text-amber-600 font-bold">
+                                Pendiente de validación
+                                </span>
+                            </p>
+                            </div>
+                        </div>
+                    )}
                     </div>
                 ) : (
                 <p>No has seleccionado un viaje todavía.</p>
