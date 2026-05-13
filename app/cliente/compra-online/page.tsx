@@ -4,6 +4,19 @@ import { useState } from "react";
 
 import Link from "next/link";
 
+const availableRoutes = [
+  {
+    name: "Ambato → Quito",
+    departure: "14:00",
+    price: "12.50",
+  },
+  {
+    name: "Ambato → Guayaquil",
+    departure: "22:00",
+    price: "18.00",
+  },
+];
+
 export default function CompraOnlinePage() {
     const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   return (
@@ -45,34 +58,37 @@ export default function CompraOnlinePage() {
             </div>
 
             <div className="mt-6 space-y-4">
-              {["Ambato → Quito", "Ambato → Guayaquil"].map((ruta, index) => (
+             {availableRoutes.map((route) => (
                 <div
-                  key={ruta}
-                  className="border rounded-xl p-4 hover:border-amber-400 transition-all"
+                    key={route.name}
+                    className="border rounded-xl p-4 hover:border-amber-400 transition-all"
                 >
-                  <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center">
                     <div>
-                      <h3 className="font-semibold text-black">{ruta}</h3>
-                      <p className="text-sm text-gray-600">
-                        Salida: {index === 0 ? "14:00" : "22:00"}
-                      </p>
+                        <h3 className="font-semibold text-black">
+                        {route.name}
+                        </h3>
+
+                        <p className="text-sm text-gray-600">
+                        Salida: {route.departure}
+                        </p>
                     </div>
 
                     <div className="text-right">
-                      <p className="font-bold text-amber-600">
-                        ${index === 0 ? "12.50" : "18.00"}
-                      </p>
+                        <p className="font-bold text-amber-600">
+                        ${route.price}
+                        </p>
 
-                      <button
-                        onClick={() => setSelectedRoute(ruta)}
+                        <button
+                        onClick={() => setSelectedRoute(route.name)}
                         className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm"
                         >
                         Seleccionar
                         </button>
                     </div>
-                  </div>
+                    </div>
                 </div>
-              ))}
+                ))}
             </div>
           </div>
 
