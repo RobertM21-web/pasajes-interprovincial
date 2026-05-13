@@ -29,30 +29,56 @@ export default function SelectorAsientos() {
         </div>
         </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         {initialSeats.map((seat) => {
-          const isSelected = selectedSeat === seat.id;
+  const isSelected = selectedSeat === seat.id;
 
-          return (
-            <button
-              key={seat.id}
-              disabled={seat.occupied}
-              onClick={() => setSelectedSeat(seat.id)}
-              className={`
-                h-16 rounded-xl font-semibold transition-all duration-200
-                ${
-                  seat.occupied
-                    ? "bg-red-200 text-red-700 cursor-not-allowed"
-                    : isSelected
-                    ? "bg-amber-500 text-white scale-105"
-                    : "bg-gray-100 text-gray-800 hover:bg-amber-100"
-                }
-              `}
-            >
-              {seat.number}
-            </button>
-          );
-        })}
+  if (seat.id % 4 === 3) {
+    return (
+      <>
+        <div key={`space-${seat.id}`} />
+
+        <button
+          key={seat.id}
+          disabled={seat.occupied}
+          onClick={() => setSelectedSeat(seat.id)}
+          className={`
+            h-16 rounded-xl font-semibold transition-all duration-200
+            ${
+              seat.occupied
+                ? "bg-red-200 text-red-700 cursor-not-allowed"
+                : isSelected
+                ? "bg-amber-500 text-white scale-105"
+                : "bg-gray-100 text-gray-800 hover:bg-amber-100"
+            }
+          `}
+        >
+          {seat.number}
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <button
+      key={seat.id}
+      disabled={seat.occupied}
+      onClick={() => setSelectedSeat(seat.id)}
+      className={`
+        h-16 rounded-xl font-semibold transition-all duration-200
+        ${
+          seat.occupied
+            ? "bg-red-200 text-red-700 cursor-not-allowed"
+            : isSelected
+            ? "bg-amber-500 text-white scale-105"
+            : "bg-gray-100 text-gray-800 hover:bg-amber-100"
+        }
+      `}
+    >
+      {seat.number}
+    </button>
+  );
+})}
       </div>
 
       <div className="flex gap-6 mt-8 justify-center text-sm text-gray-700">
