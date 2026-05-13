@@ -8,21 +8,50 @@ type Seat = {
   occupied: boolean;
 };
 
-const initialSeats: Seat[] = Array.from({ length: 20 }, (_, i) => ({
+const firstFloorSeats: Seat[] = Array.from({ length: 16 }, (_, i) => ({
   id: i + 1,
-  number: `${i + 1}`,
+  number: `P1-${i + 1}`,
   occupied: [3, 7, 12].includes(i + 1),
+}));
+
+const secondFloorSeats: Seat[] = Array.from({ length: 24 }, (_, i) => ({
+  id: i + 101,
+  number: `P2-${i + 1}`,
+  occupied: [104, 110, 118].includes(i + 101),
 }));
 
 export default function SelectorAsientos() {
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
-
+  const [floor, setFloor] = useState(1);
+const seats = floor === 1 ? firstFloorSeats : secondFloorSeats;
   return (
     <div className="w-full max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow">
       <h2 className="text-2xl font-bold mb-6 text-center">
         Selecciona tu asiento
         </h2>
+        <div className="flex justify-center gap-4 mb-6">
+          <button
+            onClick={() => setFloor(1)}
+            className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+              floor === 1
+                ? "bg-amber-500 text-white"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            }`}
+          >
+            Piso 1
+          </button>
 
+          <button
+            onClick={() => setFloor(2)}
+            className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+              floor === 2
+                ? "bg-amber-500 text-white"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            }`}
+          >
+            Piso 2
+          </button>
+        </div>
         <div className="flex justify-center mb-6">
         <div className="w-32 h-10 bg-gray-300 rounded-t-3xl flex items-center justify-center text-sm font-medium text-gray-700">
             Conductor
@@ -30,7 +59,7 @@ export default function SelectorAsientos() {
         </div>
 
       <div className="grid grid-cols-5 gap-4">
-        {initialSeats.map((seat) => {
+        {seats.map((seat) => {
   const isSelected = selectedSeat === seat.id;
 
   if (seat.id % 4 === 3) {
@@ -102,8 +131,8 @@ export default function SelectorAsientos() {
         <div className="mt-6 text-center bg-amber-50 border border-amber-200 rounded-xl p-4">
             <p className="text-lg font-medium text-gray-800">
             Asiento seleccionado:
-            <span className="ml-2 text-amber-600 font-bold">
-                {selectedSeat}
+            <span className="text-amber-600">
+              {seats.find((seat) => seat.id === selectedSeat)?.number}
             </span>
             </p>
 
