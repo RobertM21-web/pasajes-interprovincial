@@ -1,4 +1,9 @@
+"use client";
+
+import { useState } from "react";
+
 export default function CompraOnlinePage() {
+    const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-5xl mx-auto">
@@ -39,9 +44,12 @@ export default function CompraOnlinePage() {
                         ${index === 0 ? "12.50" : "18.00"}
                       </p>
 
-                      <button className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm">
+                      <button
+                        onClick={() => setSelectedRoute(ruta)}
+                        className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm"
+                        >
                         Seleccionar
-                      </button>
+                        </button>
                     </div>
                   </div>
                 </div>
@@ -55,7 +63,14 @@ export default function CompraOnlinePage() {
             </h2>
 
             <div className="space-y-3 text-gray-700">
-              <p>No has seleccionado un viaje todavía.</p>
+                            {selectedRoute ? (
+                <div>
+                    <p className="font-semibold text-black">Ruta seleccionada:</p>
+                    <p>{selectedRoute}</p>
+                </div>
+                ) : (
+                <p>No has seleccionado un viaje todavía.</p>
+                )}
             </div>
           </div>
         </div>
