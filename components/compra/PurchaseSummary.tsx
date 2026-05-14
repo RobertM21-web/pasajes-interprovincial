@@ -57,6 +57,29 @@ export default function PurchaseSummary({
           </p>
         </div>
 
+        <div className="mt-5 border-t border-amber-200 pt-4">
+          <p className="font-semibold text-black mb-3">
+            Datos de tarifa y pago
+          </p>
+
+          <div className="space-y-3">
+            <select className="w-full border rounded-xl p-3 bg-white text-gray-700">
+              <option>Tipo de pasajero</option>
+              <option>Normal</option>
+              <option>Menor de edad</option>
+              <option>Tercera edad</option>
+              <option>Discapacitado</option>
+            </select>
+
+            <select className="w-full border rounded-xl p-3 bg-white text-gray-700">
+              <option>Método de pago</option>
+              <option>Transferencia bancaria</option>
+              <option>Depósito</option>
+              <option>PayPal</option>
+            </select>
+          </div>
+        </div>
+
         <Link
           href="/cliente/selector-asientos"
           className="inline-block mt-5 px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all"
