@@ -1,5 +1,7 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { useState } from "react";
 import TicketView from "@/components/compra/TicketView";
 
 type PurchaseSummaryProps = {
@@ -13,6 +15,8 @@ export default function PurchaseSummary({
   purchaseConfirmed,
   setPurchaseConfirmed,
 }: PurchaseSummaryProps) {
+  const [passengerType, setPassengerType] = useState("Normal");
+
   if (!selectedRoute) {
     return (
       <p className="text-gray-700">
@@ -24,14 +28,11 @@ export default function PurchaseSummary({
   return (
     <div className="space-y-4">
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p className="font-semibold text-black text-lg">
-          Ruta seleccionada
-        </p>
+        <p className="font-semibold text-black text-lg">Ruta seleccionada</p>
 
         <div className="mt-3 space-y-2 text-gray-700">
           <p>
-            <span className="font-medium">Trayecto:</span>{" "}
-            {selectedRoute}
+            <span className="font-medium">Trayecto:</span> {selectedRoute}
           </p>
 
           <p>
@@ -50,9 +51,7 @@ export default function PurchaseSummary({
           <p>
             <span className="font-medium">Precio:</span>{" "}
             <span className="text-amber-600 font-bold">
-              {selectedRoute.includes("Quito")
-                ? "$12.50"
-                : "$18.00"}
+              {selectedRoute.includes("Quito") ? "$12.50" : "$18.00"}
             </span>
           </p>
         </div>
@@ -63,8 +62,11 @@ export default function PurchaseSummary({
           </p>
 
           <div className="space-y-3">
-            <select className="w-full border rounded-xl p-3 bg-white text-gray-700">
-              <option>Tipo de pasajero</option>
+            <select
+              value={passengerType}
+              onChange={(e) => setPassengerType(e.target.value)}
+              className="w-full border rounded-xl p-3 bg-white text-gray-700"
+            >
               <option>Normal</option>
               <option>Menor de edad</option>
               <option>Tercera edad</option>
@@ -77,6 +79,21 @@ export default function PurchaseSummary({
               <option>Depósito</option>
               <option>PayPal</option>
             </select>
+
+            <div className="bg-gray-100 rounded-xl p-3 text-sm text-gray-700">
+              <p>
+                Descuento aplicado:{" "}
+                <span className="font-semibold text-amber-600">
+                  {passengerType === "Tercera edad"
+                    ? "50%"
+                    : passengerType === "Discapacitado"
+                    ? "50%"
+                    : passengerType === "Menor de edad"
+                    ? "30%"
+                    : "0%"}
+                </span>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -95,9 +112,7 @@ export default function PurchaseSummary({
         </button>
       </div>
 
-      {purchaseConfirmed && (
-        <TicketView selectedRoute={selectedRoute} />
-    )}
+      {purchaseConfirmed && <TicketView selectedRoute={selectedRoute} />}
     </div>
   );
 }
