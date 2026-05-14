@@ -1,0 +1,60 @@
+type RouteCardProps = {
+  name: string;
+  departure: string;
+  price: string;
+  selected: boolean;
+  onSelect: () => void;
+};
+
+export default function RouteCard({
+  name,
+  departure,
+  price,
+  selected,
+  onSelect,
+}: RouteCardProps) {
+  return (
+    <div
+      className={`
+        border rounded-xl p-4 transition-all
+        ${
+          selected
+            ? "border-amber-500 bg-amber-50 shadow-md"
+            : "hover:border-amber-400"
+        }
+      `}
+    >
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="font-semibold text-black">
+            {name}
+          </h3>
+
+          <p className="text-sm text-gray-600">
+            Salida: {departure}
+          </p>
+        </div>
+
+        <div className="text-right">
+          <p className="font-bold text-amber-600">
+            ${price}
+          </p>
+
+          <button
+            onClick={onSelect}
+            className={`
+              mt-2 px-4 py-2 rounded-lg text-sm text-white transition-all
+              ${
+                selected
+                  ? "bg-green-600"
+                  : "bg-amber-500 hover:bg-amber-600"
+              }
+            `}
+          >
+            {selected ? "Seleccionado" : "Seleccionar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
