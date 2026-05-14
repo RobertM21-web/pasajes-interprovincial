@@ -33,6 +33,12 @@ export default function RouteCard({
           <p className="text-sm text-gray-600">
             Salida: {departure}
           </p>
+          <div className="mt-2 text-xs text-gray-500 space-y-1">
+            <p>Bus: Ejecutivo 2026</p>
+            <p>Placa: TBA-2345</p>
+            <p>Chasis: Mercedes Benz</p>
+            <p>Carrocería: IMCE</p>
+          </div>
         </div>
 
         <div className="text-right">
