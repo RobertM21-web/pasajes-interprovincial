@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import RouteCard from "@/components/compra/RouteCard";
 import PurchaseSummary from "@/components/compra/PurchaseSummary";
-
+import SearchRouteForm from "@/components/compra/SearchRouteForm";
 const availableRoutes = [
   {
     name: "Ambato → Quito",
@@ -50,15 +50,7 @@ export default function CompraOnlinePage() {
               Buscar Ruta
             </h2>
 
-            <div className="space-y-4">
-              <input type="text" placeholder="Origen" className="w-full border rounded-xl p-3" />
-              <input type="text" placeholder="Destino" className="w-full border rounded-xl p-3" />
-              <input type="date" className="w-full border rounded-xl p-3" />
-
-              <button className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl p-3 font-semibold transition-all">
-                Buscar viajes
-              </button>
-            </div>
+            <SearchRouteForm />
 
             <div className="mt-6 space-y-4">
              {availableRoutes.map((route) => {
