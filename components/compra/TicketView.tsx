@@ -27,6 +27,15 @@ export default function TicketView({
           <span className="text-amber-600 font-bold">
             Pendiente de validación
           </span>
+          <div className="flex gap-3 mt-5">
+            <button className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all">
+              Ver boleto
+            </button>
+
+            <button className="flex-1 px-4 py-2 bg-gray-800 hover:bg-black text-white rounded-xl font-semibold transition-all">
+              Descargar boleto
+            </button>
+          </div>
         </p>
       </div>
     </div>
