@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import Link from "next/link";
+import RouteCard from "@/components/compra/RouteCard";
 
 const availableRoutes = [
   {
@@ -63,51 +64,16 @@ export default function CompraOnlinePage() {
                 const isSelected = selectedRoute === route.name;
 
                 return (
-                    <div
+                    <RouteCard
                     key={route.name}
-                    className={`
-                        border rounded-xl p-4 transition-all
-                        ${
-                        isSelected
-                            ? "border-amber-500 bg-amber-50 shadow-md"
-                            : "hover:border-amber-400"
-                        }
-                    `}
-                    >
-                    <div className="flex justify-between items-center">
-                    <div>
-                        <h3 className="font-semibold text-black">
-                        {route.name}
-                        </h3>
-
-                        <p className="text-sm text-gray-600">
-                        Salida: {route.departure}
-                        </p>
-                    </div>
-
-                    <div className="text-right">
-                        <p className="font-bold text-amber-600">
-                        ${route.price}
-                        </p>
-
-                        <button
-                        onClick={() => setSelectedRoute(route.name)}
-                        className={`
-                            mt-2 px-4 py-2 rounded-lg text-sm text-white transition-all
-                            ${
-                                isSelected
-                                ? "bg-green-600"
-                                : "bg-amber-500 hover:bg-amber-600"
-                            }
-                        `}
-                        >
-                        {isSelected ? "Seleccionado" : "Seleccionar"}
-                        </button>
-                    </div>
-                    </div>
-                </div>
+                    name={route.name}
+                    departure={route.departure}
+                    price={route.price}
+                    selected={isSelected}
+                    onSelect={() => setSelectedRoute(route.name)}
+                    />
                 );
-                })}
+            })}
             </div>
           </div>
 
