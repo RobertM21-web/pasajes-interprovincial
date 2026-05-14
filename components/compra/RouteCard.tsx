@@ -41,6 +41,15 @@ export default function RouteCard({
           </div>
         </div>
 
+        <div className="mt-2 text-xs text-gray-500">
+          <p className="font-medium text-gray-600">Paradas:</p>
+          <p>
+            {name.includes("Guayaquil")
+              ? "Ambato → Riobamba → Bucay → Guayaquil"
+              : "Ambato → Latacunga → Quito"}
+          </p>
+        </div>
+
         <div className="text-right">
           <p className="font-bold text-amber-600">
             ${price}
