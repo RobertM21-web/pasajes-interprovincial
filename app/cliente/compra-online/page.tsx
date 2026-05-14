@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 
-import Link from "next/link";
+
 import RouteCard from "@/components/compra/RouteCard";
+import PurchaseSummary from "@/components/compra/PurchaseSummary";
 
 const availableRoutes = [
   {
@@ -82,131 +83,11 @@ export default function CompraOnlinePage() {
               Resumen de Compra
             </h2>
 
-            <div className="space-y-3 text-gray-700">
-                            {selectedRoute ? (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                    <p className="font-semibold text-black text-lg">
-                        Ruta seleccionada
-                    </p>
-
-                    <div className="mt-3 space-y-2 text-gray-700">
-                        <p>
-                        <span className="font-medium">Trayecto:</span>{" "}
-                        {selectedRoute}
-                        </p>
-
-                        <p>
-                        <span className="font-medium">Fecha:</span>{" "}
-                        15/05/2026
-                        </p>
-
-                        <p>
-                        <span className="font-medium">Hora:</span>{" "}
-                        {selectedRoute.includes("Quito") ? "14:00" : "22:00"}
-                        </p>
-
-                        <p>
-                        <span className="font-medium">Bus:</span>{" "}
-                        Bus Ejecutivo
-                        </p>
-
-                        <p>
-                        <span className="font-medium">Precio:</span>{" "}
-                        <span className="text-amber-600 font-bold">
-                            {selectedRoute.includes("Quito")
-                            ? "$12.50"
-                            : "$18.00"}
-                        </span>
-                        </p>
-                    </div>
-                    
-                    <div className="mt-5 border-t border-amber-200 pt-4">
-                        <p className="font-semibold text-black mb-3">
-                            Datos del pasajero
-                        </p>
-
-                        <div className="space-y-3">
-                            <input
-                            type="text"
-                            placeholder="Nombre completo"
-                            className="w-full border rounded-xl p-3"
-                            />
-
-                            <input
-                            type="text"
-                            placeholder="Cédula"
-                            className="w-full border rounded-xl p-3"
-                            />
-
-                            <input
-                            type="tel"
-                            placeholder="Teléfono"
-                            className="w-full border rounded-xl p-3"
-                            />
-                        </div>
-                    </div>
-                    
-                    <div className="mt-5 border-t border-amber-200 pt-4">
-                        <p className="font-semibold text-black mb-3">
-                            Comprobante de pago
-                        </p>
-
-                        <div className="space-y-3">
-                            <input
-                            type="file"
-                            className="w-full border rounded-xl p-3 bg-white"
-                            />
-
-                            <p className="text-sm text-gray-600">
-                            Sube tu comprobante de transferencia o depósito.
-                            </p>
-                        </div>
-                    </div>
-
-                    <Link
-                        href="/cliente/selector-asientos"
-                        className="inline-block mt-5 px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all"
-                    >
-                        Elegir asientos
-                    </Link>
-
-                    <button
-                        onClick={() => setPurchaseConfirmed(true)}
-                        className="w-full mt-4 px-5 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-all"
-                        >
-                        Confirmar compra
-                    </button>
-                    {purchaseConfirmed && (
-                        <div className="mt-6 bg-white border-2 border-dashed border-amber-400 rounded-2xl p-5 shadow">
-                            <h3 className="text-xl font-bold text-center text-black mb-4">
-                            Boleto Generado
-                            </h3>
-
-                            <div className="space-y-2 text-gray-700">
-                            <p>
-                                <span className="font-semibold">Código:</span>{" "}
-                                TICKET-2026-001
-                            </p>
-
-                            <p>
-                                <span className="font-semibold">Ruta:</span>{" "}
-                                {selectedRoute}
-                            </p>
-
-                            <p>
-                                <span className="font-semibold">Estado:</span>{" "}
-                                <span className="text-amber-600 font-bold">
-                                Pendiente de validación
-                                </span>
-                            </p>
-                            </div>
-                        </div>
-                    )}
-                    </div>
-                ) : (
-                <p>No has seleccionado un viaje todavía.</p>
-                )}
-            </div>
+            <PurchaseSummary
+                selectedRoute={selectedRoute}
+                purchaseConfirmed={purchaseConfirmed}
+                setPurchaseConfirmed={setPurchaseConfirmed}
+            />
           </div>
         </div>
       </div>
