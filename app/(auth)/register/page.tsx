@@ -44,6 +44,51 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
+    // Estados exclusivos para la verificación interactiva de correo (Opción 2)
+  const [verificandoEmail, setVerificandoEmail] = useState(false);
+  const [emailDisponible, setEmailDisponible] = useState<boolean | null>(null);
+  const [emailError, setEmailError] = useState("");
+
+  const verificarCorreoExistente = async (correo: string) => {
+    const emailLimpio = correo.trim();
+    if (!emailLimpio) return;
+
+    // Validación básica de estructura de correo antes de consultar a la base de datos
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regexEmail.test(emailLimpio)) {
+      setEmailError("El formato de correo no es válido.");
+      setEmailDisponible(false);
+      return;
+    }
+
+    setVerificandoEmail(true);
+    setEmailError("");
+    setEmailDisponible(null);
+
+    try {
+      // Petición real al endpoint del backend
+      const res = await fetch(`/api/auth/check-email?email=${encodeURIComponent(emailLimpio)}`);
+      
+      if (!res.ok) {
+        throw new Error("No se pudo verificar la disponibilidad del correo.");
+      }
+
+      const data = await res.json();
+      
+      if (data.disponible === false) {
+        setEmailDisponible(false);
+        setEmailError("Este correo ya está registrado en la cooperativa.");
+      } else {
+        setEmailDisponible(true);
+        setEmailError("");
+      }
+    } catch (err) {
+      setEmailError("Error al conectar con el servidor para verificar el correo.");
+      setEmailDisponible(null);
+    } finally {
+      setVerificandoEmail(false);
+    }
+  };
   //validacion de cedula 
     const validarCedulaEcuatoriana = (num: string) => {
     const digitos = num.trim();
@@ -101,6 +146,13 @@ const fuerza = obtenerFuerzaPassword(password);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Bloquear envío si el validador interactivo de correo dice que ya existe
+    if (emailDisponible === false) {
+      setError("No puedes registrarte utilizando un correo electrónico que ya existe en la base de datos.");
+      return;
+    }
+
     setLoading(true);
 
     // 1. Validaciones del lado del cliente antes de enviar a la Base de Datos
@@ -128,27 +180,14 @@ const fuerza = obtenerFuerzaPassword(password);
       return;
     }
 
-    // Reglas de Contraseña Fuertes (Estándar de Seguridad)
-    const tieneMayuscula = /[A-Z]/.test(password);
-    const tieneMinuscula = /[a-z]/.test(password);
-    const tieneNumero = /[0-9]/.test(password);
-    const tieneEspecial = /[^A-Za-z0-9]/.test(password); // Carácter que no sea número ni letra
-
-    if (password.length < 8) {
-      setError("La contraseña debe tener al menos 8 caracteres de longitud.");
+    // Comprobamos la seguridad fuerte obligatoria para enviar
+    if (fuerza.score < 5) {
+      setError("La contraseña no cumple con todos los criterios de seguridad fuertes exigidos.");
       setLoading(false);
       return;
     }
 
-    if (!tieneMayuscula || !tieneMinuscula || !tieneNumero || !tieneEspecial) {
-      setError(
-        "La contraseña es demasiado débil. Debe contener obligatoriamente al menos una letra mayúscula, una letra minúscula, un número y un carácter especial (ej. !@#$*)."
-      );
-      setLoading(false);
-      return;
-    }
-
-        try {
+    try {
       // 2. Envío a la API del backend que creará Robert
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -161,7 +200,7 @@ const fuerza = obtenerFuerzaPassword(password);
           telefono,
           email,
           password,
-          // Se enviará el ID del rol CLIENTE: c10373a9-cb16-4200-b8c0-1038edd93079
+          // El rolId se asigna directamente aquí para garantizar que el usuario se registre como Pasajero.
           rolId: "c10373a9-cb16-4200-b8c0-1038edd93079" 
         }),
       });
@@ -369,6 +408,7 @@ const fuerza = obtenerFuerzaPassword(password);
                 </div>
               </div>
 
+              {/* CAMPO DE CORREO CON VALIDACIÓN INTERACTIVA DE UNICIDAD (SÓLO FUNCIONES PRINCIPALES) */}
               <div className="space-y-1.5">
                 <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Email Personal
@@ -381,12 +421,46 @@ const fuerza = obtenerFuerzaPassword(password);
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailDisponible(null); 
+                      setEmailError("");
+                    }}
+                    onBlur={() => verificarCorreoExistente(email)} 
                     required
                     placeholder="ejemplo@correo.com"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm bg-gray-50/50 hover:bg-gray-50 focus:bg-white text-gray-900 placeholder:text-gray-400"
+                    className={`w-full pl-10 pr-10 py-2.5 border rounded-xl focus:ring-2 outline-none transition text-sm ${
+                      emailDisponible === false 
+                        ? "border-amber-400 bg-amber-50/20 focus:ring-amber-500/20 focus:border-amber-500" 
+                        : emailDisponible === true 
+                        ? "border-emerald-300 bg-emerald-50/10 focus:ring-emerald-500/20 focus:border-emerald-500" 
+                        : "border-gray-200 bg-gray-50/50 hover:bg-gray-50 focus:bg-white focus:ring-blue-500/20 focus:border-blue-500"
+                    }`}
                   />
+                  
+                  {/* Pequeño Spinner de Carga dentro del Input */}
+                  {verificandoEmail && (
+                    <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none">
+                      <svg className="animate-spin h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
+
+                {/* Avisos de Estado */}
+                {emailError && (
+                  <p className="text-[11px] font-semibold text-amber-600 mt-1 flex items-center space-x-1 animate-fade-in">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    <span>{emailError}</span>
+                  </p>
+                )}
+                {emailDisponible === true && email && (
+                  <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center space-x-1 animate-fade-in">
+                    <span>Correo disponible</span>
+                  </p>
+                )}
               </div>
             </div>
 
