@@ -24,3 +24,33 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes driveAndVibrate {
+  0% {
+    transform: translateX(-40px);
+    opacity: 0;
+  }
+  15% {
+    transform: translateX(20px) translateY(0px);
+    opacity: 1;
+  }
+  /* Efecto de vibración del motor encendido (idling) */
+  20% { transform: translateX(20px) translateY(-1px); }
+  25% { transform: translateX(20px) translateY(0px); }
+  30% { transform: translateX(20px) translateY(-1px); }
+  35% { transform: translateX(20px) translateY(0px); }
+  40% { transform: translateX(20px) translateY(-1px); }
+  45% { transform: translateX(20px) translateY(0px); }
+  50% { transform: translateX(20px) translateY(-1.5px); }
+  55% { transform: translateX(20px) translateY(0px); }
+  65% { transform: translateX(20px) translateY(0px); }
+  /* El autobús acelera y sale por la derecha de la pantalla */
+  100% {
+    transform: translateX(180px);
+    opacity: 0;
+  }
+}
+
+.animate-bus-drive {
+  animation: driveAndVibrate 2.2s infinite ease-in-out;
+}
