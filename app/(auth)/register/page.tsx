@@ -76,7 +76,7 @@ export default function RegisterPage() {
     return resultado === digitoVerificador;
   };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -96,6 +96,32 @@ export default function RegisterPage() {
 
     if (telefono.trim().length < 9 || !/^\d+$/.test(telefono)) {
       setError("Por favor, ingresa un número de teléfono celular válido (Ej. 0998765432).");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Las contraseñas ingresadas no coinciden.");
+      setLoading(false);
+      return;
+    }
+
+    // Reglas de Contraseña Fuertes (Estándar de Seguridad)
+    const tieneMayuscula = /[A-Z]/.test(password);
+    const tieneMinuscula = /[a-z]/.test(password);
+    const tieneNumero = /[0-9]/.test(password);
+    const tieneEspecial = /[^A-Za-z0-9]/.test(password); // Carácter que no sea número ni letra
+
+    if (password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres de longitud.");
+      setLoading(false);
+      return;
+    }
+
+    if (!tieneMayuscula || !tieneMinuscula || !tieneNumero || !tieneEspecial) {
+      setError(
+        "La contraseña es demasiado débil. Debe contener obligatoriamente al menos una letra mayúscula, una letra minúscula, un número y un carácter especial (ej. !@#$*)."
+      );
       setLoading(false);
       return;
     }
@@ -310,8 +336,8 @@ export default function RegisterPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="Mínimo 6 caracteres"
-                    className="w-full px-4 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm bg-gray-50/50 hover:bg-gray-50 focus:bg-white text-gray-900 placeholder:text-gray-400"
+                    placeholder="Mín. 8 caracteres (A, a, 1, #)"
+                    className="w-full px-4 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm bg-gray-50/50 hover:bg-gray-50 focus:bg-white text-gray-900 placeholder:text-xs placeholder:text-gray-400"
                   />
                   <button
                     type="button"
