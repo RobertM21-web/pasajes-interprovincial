@@ -76,6 +76,28 @@ export default function RegisterPage() {
     return resultado === digitoVerificador;
   };
 
+  const obtenerFuerzaPassword = (pass: string) => {
+  if (!pass) return { score: 0, label: "Sin contraseña", color: "bg-gray-200", textColor: "text-gray-400", width: "w-0" };
+  
+  let score = 0;
+  if (pass.length >= 8) score++;
+  if (/[A-Z]/.test(pass)) score++;
+  if (/[a-z]/.test(pass)) score++;
+  if (/[0-9]/.test(pass)) score++;
+  if (/[^A-Za-z0-9]/.test(pass)) score++;
+
+  if (score <= 2) {
+    return { score, label: "Débil", color: "bg-red-500", textColor: "text-red-500", width: "w-1/3" };
+  } else if (score <= 4) {
+    return { score, label: "Media", color: "bg-amber-500", textColor: "text-amber-500", width: "w-2/3" };
+  } else {
+    return { score, label: "Fuerte", color: "bg-emerald-500", textColor: "text-emerald-500", width: "w-full" };
+  }
+};
+
+// Obtenemos el estado actual de la contraseña
+const fuerza = obtenerFuerzaPassword(password);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -370,10 +392,13 @@ export default function RegisterPage() {
 
             {/* Fila 3: Contraseña y Confirmación */}
             <div className="grid gap-4 sm:grid-cols-2">
+              {/* Contenedor del campo contraseña */}
               <div className="space-y-1.5">
                 <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Contraseña
                 </label>
+                
+                {/* Contenedor relativo - LIMITADO ÚNICAMENTE AL INPUT Y AL BOTÓN DEL OJO */}
                 <div className="relative">
                   <input
                     id="password"
@@ -392,6 +417,27 @@ export default function RegisterPage() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+
+                {/* Barra interactiva del medidor de seguridad - TOTALMENTE EXTRAPOLADA FUERA DEL CONTENEDOR RELATIVE */}
+                {password && (
+                  <div className="mt-2.5 space-y-1.5 animate-fade-in">
+                    <div className="flex justify-between items-center text-[10px] font-semibold tracking-wider">
+                      <span className="text-gray-400 uppercase">Seguridad:</span>
+                      <span className={fuerza.textColor}>{fuerza.label}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${fuerza.color} transition-all duration-300 ease-out ${fuerza.width}`}
+                      ></div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1 text-[9px] text-gray-400 font-medium">
+                      <span className={password.length >= 8 ? "text-emerald-600 font-bold" : ""}>• 8+ Carac.</span>
+                      <span className={/[A-Z]/.test(password) ? "text-emerald-600 font-bold" : ""}>• Mayúsc.</span>
+                      <span className={/[0-9]/.test(password) ? "text-emerald-600 font-bold" : ""}>• Números</span>
+                      <span className={/[^A-Za-z0-9]/.test(password) ? "text-emerald-600 font-bold" : ""}>• Espec.</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1.5">
