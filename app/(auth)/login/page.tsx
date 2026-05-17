@@ -223,31 +223,18 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Sección de credenciales de prueba */}
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <div className="bg-blue-50/70 border border-blue-100 rounded-xl p-4">
-              <div className="flex items-center space-x-2 text-blue-800 font-semibold text-xs mb-2">
-                <Info className="h-4 w-4 text-blue-600 shrink-0" />
-                <span>ACCESOS RÁPIDOS DE PRUEBA (DEV)</span>
-              </div>
-              <div className="space-y-1.5 text-xs text-gray-600">
-                <div className="flex justify-between border-b border-blue-100/40 pb-1">
-                  <span className="font-medium text-gray-500">Admin:</span>
-                  <span className="font-mono text-gray-700">admin@cooperativa.com / Admin123!</span>
-                </div>
-                <div className="flex justify-between border-b border-blue-100/40 pb-1">
-                  <span className="font-medium text-gray-500">Oficinista:</span>
-                  <span className="font-mono text-gray-700">oficinista@cooperativa.com / Ofici123!</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium text-gray-500">Cliente:</span>
-                  <span className="font-mono text-gray-700">cliente@ejemplo.com / Client123!</span>
-                </div>
-              </div>
-            </div>
+          {/* Enlace para registarse como cliente*/}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-500">
+              ¿Aún no estas registardo?{" "}
+              <button
+                onClick={() => router.push("/register")}
+                className="text-blue-600 hover:text-blue-800 font-semibold transition hover:underline"
+              >
+                Regístrate aquí
+              </button>
+            </p>
           </div>
-
         </div>
       </div>
 
