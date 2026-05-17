@@ -125,6 +125,51 @@ export default function RegisterPage() {
       setLoading(false);
       return;
     }
+
+    try {
+      // 2. Envío a la API del backend que creará Robert
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nombre,
+          cedula,
+          telefono,
+          email,
+          password,
+          // Se enviará el ID del rol CLIENTE: c10373a9-cb16-4200-b8c0-1038edd93079
+          rolId: "c10373a9-cb16-4200-b8c0-1038edd93079" 
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Ocurrió un error al registrar el usuario.");
+      }
+
+      setSuccess(true);
+      setLoading(false);
+      
+      // Limpiar formulario tras éxito
+      setNombre("");
+      setCedula("");
+      setTelefono("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+
+      // Redirigir a login tras 3 segundos
+      setTimeout(() => {
+        router.push("/login");
+      }, 3000);
+
+    } catch (err: any) {
+      setError(err.message || "Hubo un problema de conexión. Inténtalo de nuevo.");
+      setLoading(false);
+    }
   };
 
 
