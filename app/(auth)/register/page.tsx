@@ -75,14 +75,33 @@ export default function RegisterPage() {
 
     return resultado === digitoVerificador;
   };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
+
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
- 
+    // 1. Validaciones del lado del cliente antes de enviar a la Base de Datos
+    if (nombre.trim().length < 4) {
+      setError("Por favor, ingresa tu nombre y apellido completo.");
+      setLoading(false);
+      return;
+    }
+
+    if (!validarCedulaEcuatoriana(cedula)) {
+      setError("El número de cédula ingresado no es válido para Ecuador (debe tener 10 dígitos numéricos válidos).");
+      setLoading(false);
+      return;
+    }
+
+    if (telefono.trim().length < 9 || !/^\d+$/.test(telefono)) {
+      setError("Por favor, ingresa un número de teléfono celular válido (Ej. 0998765432).");
+      setLoading(false);
+      return;
+    }
   };
+
+
 
   return (
     <div className="min-h-screen grid lg:grid-cols-12 bg-gray-50 text-gray-900 font-sans">
