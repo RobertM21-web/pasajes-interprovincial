@@ -126,7 +126,7 @@ export default function RegisterPage() {
       return;
     }
 
-    try {
+        try {
       // 2. Envío a la API del backend que creará Robert
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -237,7 +237,7 @@ export default function RegisterPage() {
 
         {/* Footer */}
         <div className="text-xs text-blue-200/60 z-10">
-          © 2026 Cooperativa Trans-Eclipse S.A. Todos los derechos reservados.
+          © 2026 Cooperativa Fantasma. Todos los derechos reservados.
         </div>
       </div>
 
@@ -419,6 +419,14 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Términos y condiciones */}
+            <div className="flex items-start space-x-2 pt-1 text-xs text-gray-500 leading-relaxed">
+              <input type="checkbox" required className="mt-0.5 border-gray-300 rounded text-blue-600 focus:ring-blue-500" />
+              <span>
+                Acepto los términos de servicio, política de privacidad y autorizo el tratamiento seguro de mis datos personales.
+              </span>
+            </div>
+
             {/* Botón de envío con autobús animado global de globals.css */}
             <button
               type="submit"
@@ -443,7 +451,18 @@ export default function RegisterPage() {
               )}
             </button>
           </form>
-
+          {/* Enlace para volver a Iniciar Sesión */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-500">
+              ¿Ya tienes una cuenta registrada?{" "}
+              <button
+                onClick={() => router.push("/login")}
+                className="text-blue-600 hover:text-blue-800 font-semibold transition hover:underline"
+              >
+                Inicia sesión aquí
+              </button>
+            </p>
+          </div>
 
         </div>
       </div>
