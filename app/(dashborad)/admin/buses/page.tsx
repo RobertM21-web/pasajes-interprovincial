@@ -466,6 +466,13 @@ export default function BusesAdminPage() {
                         </td>
                         <td className="py-4 px-6 text-right space-x-1">
                           <button
+                            onClick={() => setSelectedBusMap(bus)}
+                            className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition inline-flex"
+                            title="Ver plano de asientos"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
                             onClick={() => handleOpenEditModal(bus)}
                             className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition inline-flex"
                             title="Editar bus"
@@ -490,6 +497,99 @@ export default function BusesAdminPage() {
         </div>
 
         {/* COLUMNA DERECHA: Plano de Asientos Interactivo de Next.js (4 Columnas) */}
+        <div className="lg:col-span-4">
+          {selectedBusMap ? (
+            <div className="bg-slate-900 text-white p-6 rounded-2xl border border-slate-800 shadow-xl space-y-6 sticky top-6">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2">
+                  <Bus className="h-5 w-5 text-blue-400" />
+                  <h3 className="font-bold text-white">Distribución: Bus {selectedBusMap.numero}</h3>
+                </div>
+                <button 
+                  onClick={() => setSelectedBusMap(null)}
+                  className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Categorías tarifarias del bus seleccionado */}
+              <div className="space-y-2.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Leyenda Tarifaria</span>
+                <div className="grid gap-2 text-xs">
+                  {selectedBusMap.categorias.map((cat, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-950/40 border border-slate-800">
+                      <div className="flex items-center space-x-2">
+                        <span className={`h-3 w-3 rounded ${
+                          idx === 0 ? "bg-blue-500" : idx === 1 ? "bg-amber-500" : "bg-purple-500"
+                        }`}></span>
+                        <span className="font-semibold">{cat.nombre}</span>
+                      </div>
+                      <span className="font-mono text-emerald-400">${Number(cat.precioBase).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Representación visual de un bus real (Layout Tipo Avión) */}
+              <div className="bg-slate-950 rounded-2xl border border-slate-800 p-4 relative">
+                {/* Cabina del Conductor */}
+                <div className="h-10 border-b border-dashed border-slate-800 mb-6 flex items-center justify-between px-3 text-slate-500 text-[10px] font-bold uppercase">
+                  <span>Conductor </span>
+                  <span>Puerta </span>
+                </div>
+
+                {/* Plano de Asientos en una cuadrícula de 4 columnas */}
+                <div className="grid grid-cols-4 gap-2 max-h-80 overflow-y-auto pr-1">
+                  {Array.from({ length: Math.ceil(selectedBusMap.totalAsientos / 4) }).map((_, fIdx) => {
+                    const fila = fIdx + 1;
+                    return ["A", "B", "C", "D"].map((letra) => {
+                      const etiqueta = `${fila}${letra}`;
+                      const esVIP = fila === 1; 
+                      const esDiscapacidad = fila === 10;
+                      
+                      return (
+                        <div 
+                          key={etiqueta}
+                          className={`aspect-square rounded-lg flex flex-col items-center justify-center border text-[10px] font-bold transition-all relative ${
+                            esVIP 
+                              ? "bg-amber-500/20 border-amber-500/40 text-amber-300" 
+                              : esDiscapacidad 
+                              ? "bg-purple-500/20 border-purple-500/40 text-purple-300"
+                              : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                          }`}
+                          title={`Asiento ${etiqueta}`}
+                        >
+                          <span>{etiqueta}</span>
+                        </div>
+                      );
+                    });
+                  })}
+                </div>
+
+                {/* Pasillo central de salida */}
+                <div className="absolute top-[48px] bottom-4 left-1/2 -translate-x-1/2 w-4 bg-slate-950/90 border-l border-r border-dashed border-slate-800 pointer-events-none flex items-center justify-center">
+                  <span className="text-[8px] text-slate-700 uppercase tracking-widest rotate-90">Pasillo</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex items-start space-x-2 text-[11px] text-slate-400 leading-relaxed">
+                <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                <span>Los asientos han sido generados automáticamente en la base de datos siguiendo una grilla normalizada de 4 asientos por fila (2 izquierda, pasillo, 2 derecha).</span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm sticky top-6">
+              <div className="bg-slate-50 p-3.5 rounded-full inline-block text-slate-400 mb-3.5">
+                <Eye className="h-6 w-6" />
+              </div>
+              <h3 className="font-bold text-slate-950">Visualizar Planos</h3>
+              <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">
+                Haz clic en el icono del ojo de cualquier bus para desplegar su plano de asientos y categorías tarifarias en tiempo real.
+              </p>
+            </div>
+          )}
+        </div>
 
       </div>
 
