@@ -31,3 +31,31 @@ export async function PUT(
     );
   }
 }
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const notificacion = await prisma.notificacion.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!notificacion) {
+      return NextResponse.json(
+        { error: "Notificación no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    await prisma.notificacion.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({ message: "Notificación eliminada" });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Error al eliminar notificación" },
+      { status: 500 }
+    );
+  }
+}
