@@ -1,40 +1,96 @@
 "use client";
 
-import { useState } from "react";
-
-type SeatType = "normal" | "vip";
+import { useState, useEffect } from "react";
 
 type Seat = {
-  id: number;
-  number: string;
-  occupied: boolean;
-  type: SeatType;
+  id: string;
+  numero: number;
+  fila: number;
+  posicion: number;
+  etiqueta: string; // Ej: "1A", "1B", "2A"
+  categoria: string; // "NORMAL", "VIP", "DISCAPACIDAD", etc.
+  precioBase: number; // Precio real de la BD
+  ocupado: boolean;
 };
 
-const firstFloorSeats: Seat[] = Array.from({ length: 16 }, (_, i) => ({
-  id: i + 1,
-  number: `P1-${i + 1}`,
-  occupied: [3, 7, 12].includes(i + 1),
-  type: i < 4 ? "vip" : "normal",
-}));
+export default function SelectorAsientos({ rutaId }: { rutaId: string }) {
+  const [seats, setSeats] = useState<Seat[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
+  const [floor, setFloor] = useState<number>(1);
 
-const secondFloorSeats: Seat[] = Array.from({ length: 24 }, (_, i) => ({
-  id: i + 101,
-  number: `P2-${i + 1}`,
-  occupied: [104, 110, 118].includes(i + 101),
-  type: i < 6 ? "vip" : "normal",
-}));
+  useEffect(() => {
+    async function cargarAsientos() {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/selector-asientos?rutaId=${rutaId}`);
+        
+        if (!response.ok) {
+          throw new Error("No se pudo obtener el mapa de asientos");
+        }
+        
+        const data = await response.json();
+        setSeats(data.asientos || []);
+      } catch (err: any) {
+        setError(err.message || "Error al conectar con el servidor");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-const getSeatPrice = (type: SeatType) => {
-  return type === "vip" ? 18 : 12.5;
-};
+    if (rutaId) {
+      cargarAsientos();
+    }
+  }, [rutaId]);
 
-export default function SelectorAsientos() {
-  const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
-  const [floor, setFloor] = useState(1);
+  const cambiarPiso = (numeroPiso: number) => {
+    setFloor(numeroPiso);
+    setSelectedSeat(null);
+  };
 
-  const seats = floor === 1 ? firstFloorSeats : secondFloorSeats;
+  // Filtrar asientos por piso basándonos en el número dentro de la etiqueta
+  const filteredSeats = seats.filter((seat) => {
+    const textoEtiqueta = seat.etiqueta || "";
+    const numeroFila = parseInt(textoEtiqueta.replace(/[^0-9]/g, "")) || 1;
+    
+    if (floor === 1) return numeroFila <= 10;
+    return numeroFila > 10;
+  });
+
+  // Agrupar los asientos por número de fila extraído
+  const rowsMap: { [key: number]: Seat[] } = {};
+  filteredSeats.forEach((seat) => {
+    const textoEtiqueta = seat.etiqueta || "";
+    const filaNum = parseInt(textoEtiqueta.replace(/[^0-9]/g, "")) || 1;
+    
+    if (!rowsMap[filaNum]) {
+      rowsMap[filaNum] = [];
+    }
+    rowsMap[filaNum].push(seat);
+  });
+
+  const sortedRows = Object.keys(rowsMap)
+    .map(Number)
+    .sort((a, b) => a - b);
+
   const selectedSeatData = seats.find((seat) => seat.id === selectedSeat);
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow text-center text-gray-700 font-medium animate-pulse">
+        Cargando mapa de asientos dinámico desde la base de datos...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow text-center text-red-600 font-semibold">
+        Error al procesar la solicitud: {error}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow">
@@ -42,24 +98,20 @@ export default function SelectorAsientos() {
         Selecciona tu asiento
       </h2>
 
+      {/* Selector de Piso */}
       <div className="flex justify-center gap-4 mb-6">
         <button
-          onClick={() => setFloor(1)}
+          onClick={() => cambiarPiso(1)}
           className={`px-4 py-2 rounded-xl font-semibold transition-all ${
-            floor === 1
-              ? "bg-amber-500 text-white"
-              : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            floor === 1 ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
         >
           Piso 1
         </button>
-
         <button
-          onClick={() => setFloor(2)}
+          onClick={() => cambiarPiso(2)}
           className={`px-4 py-2 rounded-xl font-semibold transition-all ${
-            floor === 2
-              ? "bg-amber-500 text-white"
-              : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            floor === 2 ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
         >
           Piso 2
@@ -72,101 +124,114 @@ export default function SelectorAsientos() {
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-4">
-        {seats.map((seat) => {
-          const isSelected = selectedSeat === seat.id;
-          const seatPrice = getSeatPrice(seat.type);
+      {/* Renderizado de filas del autobús */}
+      <div className="max-w-sm mx-auto bg-gray-50 border border-gray-200 rounded-3xl p-6 shadow-inner">
+        <div className="flex flex-col gap-3">
+          {sortedRows.map((filaNum) => {
+            const asientosDeFila = rowsMap[filaNum];
 
-          const seatStyle = seat.occupied
-            ? "bg-red-200 text-red-700 cursor-not-allowed"
-            : isSelected
-            ? "bg-amber-500 text-white scale-105"
-            : seat.type === "vip"
-            ? "bg-purple-100 text-purple-800 hover:bg-purple-200"
-            : "bg-gray-100 text-gray-800 hover:bg-amber-100";
+            // Filtramos las posiciones de los asientos según la letra final de la etiqueta
+            const asientoA = asientosDeFila.find((s) => (s.etiqueta || "").toUpperCase().endsWith("A"));
+            const asientoB = asientosDeFila.find((s) => (s.etiqueta || "").toUpperCase().endsWith("B"));
+            const asientoC = asientosDeFila.find((s) => (s.etiqueta || "").toUpperCase().endsWith("C"));
+            const asientoD = asientosDeFila.find((s) => (s.etiqueta || "").toUpperCase().endsWith("D"));
 
-          const seatButton = (
-            <button
-              key={seat.id}
-              disabled={seat.occupied}
-              onClick={() => setSelectedSeat(seat.id)}
-              className={`h-16 rounded-xl font-semibold transition-all duration-200 hover:shadow-lg ${seatStyle}`}
-            >
-              <div className="flex flex-col items-center">
-                <div className="flex items-center gap-1">
-                  <span>{seat.number}</span>
+            const renderButton = (seat?: Seat) => {
+              if (!seat) return <div className="h-12 w-full" />;
 
-                  {seat.type === "vip" && (
-                    <span className="text-[10px] px-1 py-0.5 bg-purple-700 text-white rounded">
-                      VIP
-                    </span>
-                  )}
+              const isSelected = selectedSeat === seat.id;
+              const nombreCat = seat.categoria?.toLowerCase() || "";
+              
+              const isVip = nombreCat.includes("vip");
+              const isDiscapacidad = nombreCat.includes("discapacidad") || nombreCat.includes("conci");
+
+              let seatStyle = "bg-blue-50 text-blue-800 border border-blue-200 hover:bg-amber-50";
+
+              if (seat.ocupado) {
+                seatStyle = "bg-red-200 text-red-700 cursor-not-allowed";
+              } else if (isSelected) {
+                seatStyle = "bg-amber-500 text-white scale-105";
+              } else if (isVip) {
+                seatStyle = "bg-purple-100 text-purple-800 border border-purple-300 hover:bg-purple-200";
+              } else if (isDiscapacidad) {
+                seatStyle = "bg-green-100 text-green-800 border border-green-300 hover:bg-green-200";
+              }
+
+              return (
+                <button
+                  key={seat.id}
+                  disabled={seat.ocupado}
+                  onClick={() => setSelectedSeat(seat.id)}
+                  className={`h-12 w-full rounded-xl font-bold text-xs flex flex-col items-center justify-center transition-all ${seatStyle}`}
+                >
+                  <div className="flex items-center gap-0.5">
+                    <span>{seat.etiqueta}</span>
+                    {isVip && <span className="text-[7px] px-0.5 bg-purple-700 text-white rounded font-extrabold">V</span>}
+                    {isDiscapacidad && <span className="text-[7px] px-0.5 bg-green-700 text-white rounded font-extrabold">D</span>}
+                  </div>
+                  <span className="text-[9px] font-normal opacity-85">
+                    ${Number(seat.precioBase).toFixed(2)}
+                  </span>
+                </button>
+              );
+            };
+
+            return (
+              <div key={`fila-${filaNum}`} className="grid grid-cols-5 gap-2 items-center">
+                {renderButton(asientoA)}
+                {renderButton(asientoB)}
+
+                {/* Pasillo central */}
+                <div className="w-full text-center text-xs text-gray-300 font-bold select-none">
+                  ||
                 </div>
 
-                <span className="text-xs mt-1">${seatPrice.toFixed(2)}</span>
+                {renderButton(asientoC)}
+                {renderButton(asientoD)}
               </div>
-            </button>
-          );
-
-          if (seat.id % 4 === 3) {
-            return (
-              <>
-                <div key={`space-${seat.id}`} />
-                {seatButton}
-              </>
             );
-          }
-
-          return seatButton;
-        })}
+          })}
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-6 mt-8 justify-center text-sm text-gray-700">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-gray-100 border" />
-          Disponible
+      {/* Leyenda Dinámica */}
+      <div className="flex flex-wrap gap-4 mt-6 justify-center text-xs text-gray-600">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded bg-blue-50 border border-blue-200" />
+          Normal
         </div>
-
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-purple-100 border" />
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded bg-purple-100 border border-purple-200" />
           VIP
         </div>
-
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-amber-500" />
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded bg-green-100 border border-green-200" />
+          Discapacidad
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded bg-amber-500" />
           Seleccionado
         </div>
-
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-red-200" />
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 rounded bg-red-200" />
           Ocupado
         </div>
       </div>
 
+      {/* Panel Informativo de Selección */}
       {selectedSeatData && (
-        <div className="mt-6 text-center bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-lg font-medium text-gray-800">
+        <div className="mt-6 max-w-sm mx-auto text-center bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+          <p className="text-base font-medium text-gray-800">
             Asiento seleccionado:
-            <span className="ml-2 text-amber-600 font-bold">
-              {selectedSeatData.number}
-            </span>
+            <span className="ml-2 text-amber-600 font-bold">{selectedSeatData.etiqueta}</span>
           </p>
-
-          <p className="text-sm text-gray-600 mt-1">
-            Tipo:{" "}
-            <span className="font-semibold uppercase">
-              {selectedSeatData.type}
-            </span>
+          <p className="text-xs text-gray-600 mt-0.5">
+            Categoría: <span className="font-semibold uppercase text-purple-700">{selectedSeatData.categoria}</span>
           </p>
-
-          <p className="text-sm text-gray-600 mt-1">
-            Precio del asiento:{" "}
-            <span className="font-semibold">
-              ${getSeatPrice(selectedSeatData.type).toFixed(2)}
-            </span>
+          <p className="text-xs text-gray-600 mt-0.5">
+            Precio de este asiento: <span className="font-bold text-gray-900">${Number(selectedSeatData.precioBase).toFixed(2)}</span>
           </p>
-
-          <button className="mt-4 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all duration-200">
+          <button className="mt-3 w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold text-sm transition-all shadow-sm">
             Continuar compra
           </button>
         </div>
