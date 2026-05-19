@@ -1,17 +1,62 @@
-import prisma from '@/lib/prisma';
-import { Plus, Pencil, Trash2, Clock, MapPin, CheckCircle2, XCircle } from 'lucide-react';
+'use client';
 
-export const metadata = {
-  title: 'Frecuencias | Panel de Administración',
-};
+import { useState, useEffect } from 'react';
+import { Plus, Pencil, Trash2, Clock, MapPin, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import FrecuenciaModal, { Frecuencia } from '@/components/frecuencias/FrecuenciaModal';
 
-export default async function FrecuenciasPage() {
-  // Obtener las frecuencias desde la Base de Datos usando Prisma
-  const frecuencias = await prisma.frecuencia.findMany({
-    orderBy: [
-      { hora: 'asc' },
-    ],
-  });
+export default function FrecuenciasPage() {
+  const [frecuencias, setFrecuencias] = useState<Frecuencia[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedFrecuencia, setSelectedFrecuencia] = useState<Frecuencia | null>(null);
+
+  const fetchFrecuencias = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/frecuencias');
+      if (res.ok) {
+        const data = await res.json();
+        setFrecuencias(data);
+      }
+    } catch (error) {
+      console.error('Error fetching frecuencias:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFrecuencias();
+  }, []);
+
+  const handleOpenModal = (frecuencia: Frecuencia | null = null) => {
+    setSelectedFrecuencia(frecuencia);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = (refresh?: boolean) => {
+    setIsModalOpen(false);
+    setSelectedFrecuencia(null);
+    if (refresh) {
+      fetchFrecuencias();
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta frecuencia?')) return;
+    
+    try {
+      const res = await fetch(`/api/frecuencias/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        fetchFrecuencias();
+      }
+    } catch (error) {
+      console.error('Error deleting frecuencia:', error);
+      alert('Error al eliminar la frecuencia.');
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-500 p-6 lg:p-8">
@@ -27,19 +72,24 @@ export default async function FrecuenciasPage() {
           </p>
         </div>
         
-        {/* 
-          NOTA: Para integrar @radix-ui/react-dialog (modales) en un Server Component, 
-          estos botones interactivos deben ser extraídos a un Client Component 
-          (ej. <CreateFrecuenciaDialog />) que envuelva el botón.
-        */}
-        <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-all bg-indigo-600 rounded-xl hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-500/20 active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+        <button 
+          onClick={() => handleOpenModal()}
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white transition-all bg-indigo-600 rounded-xl hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-500/20 active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+        >
           <Plus className="w-4 h-4" />
           Nueva frecuencia
         </button>
       </div>
 
       {/* Sección de la Tabla */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden relative min-h-[400px]">
+        {loading ? (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+            <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+            <span className="mt-2 text-sm font-medium text-slate-600 dark:text-slate-300">Cargando frecuencias...</span>
+          </div>
+        ) : null}
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -62,7 +112,7 @@ export default async function FrecuenciasPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {frecuencias.length === 0 ? (
+              {!loading && frecuencias.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-16 text-center text-slate-500 dark:text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-3">
@@ -123,17 +173,15 @@ export default async function FrecuenciasPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        {/* 
-                          NOTA: Igual que el botón de crear, estos botones deben 
-                          envolver el trigger del modal en un Client Component.
-                        */}
                         <button 
+                          onClick={() => handleOpenModal(frecuencia)}
                           className="p-2.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition-colors"
                           title="Editar frecuencia"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button 
+                          onClick={() => frecuencia.id && handleDelete(frecuencia.id)}
                           className="p-2.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors"
                           title="Eliminar frecuencia"
                         >
@@ -152,6 +200,12 @@ export default async function FrecuenciasPage() {
           <span>Mostrando <span className="font-semibold text-slate-900 dark:text-slate-200">{frecuencias.length}</span> resultados</span>
         </div>
       </div>
+
+      <FrecuenciaModal 
+        isOpen={isModalOpen} 
+        onClose={handleCloseModal} 
+        frecuencia={selectedFrecuencia} 
+      />
     </div>
   );
 }
