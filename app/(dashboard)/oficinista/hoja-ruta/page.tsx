@@ -1,9 +1,10 @@
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth/next'
-import { FileText, Map, Bus, Clock, Calendar as CalendarIcon, Plus, CheckCircle2, PlayCircle, XCircle, MapPin, SearchX } from 'lucide-react'
+import { FileText, Map, Bus, Clock, Calendar as CalendarIcon, Plus, CheckCircle2, PlayCircle, XCircle, MapPin, SearchX, Route } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
+import { CrearHojaRutaModal } from '@/components/hoja-ruta/CrearHojaRutaModal'
 
 export default async function HojaRutaPage() {
   const session = await getServerSession()
@@ -113,13 +114,7 @@ export default async function HojaRutaPage() {
         </div>
         
         {!hojaRutaActiva && (
-          <Link 
-            href="/oficinista/hoja-ruta/crear"
-            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow active:scale-95"
-          >
-            <Plus className="w-5 h-5 mr-2 -ml-1" />
-            Crear Hoja de Ruta
-          </Link>
+          <CrearHojaRutaModal />
         )}
       </div>
 
@@ -133,13 +128,12 @@ export default async function HojaRutaPage() {
           <p className="text-gray-500 max-w-md mx-auto mb-8">
             Actualmente no tienes ninguna hoja de ruta habilitada. Crea una nueva para comenzar a gestionar tus asignaciones y ventas.
           </p>
-          <Link 
-            href="/oficinista/hoja-ruta/crear"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all shadow-sm hover:shadow"
-          >
-            <Plus className="w-5 h-5 mr-2 -ml-1" />
-            Comenzar nueva hoja
-          </Link>
+          <CrearHojaRutaModal>
+            <button className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all shadow-sm hover:shadow active:scale-95">
+              <Plus className="w-5 h-5 mr-2 -ml-1" />
+              Comenzar nueva hoja
+            </button>
+          </CrearHojaRutaModal>
         </div>
       ) : (
         <div className="space-y-10">
@@ -169,11 +163,29 @@ export default async function HojaRutaPage() {
             </div>
           </div>
 
-          {/* Listado Agrupado */}
-          <div className="space-y-8">
-            {Object.entries(rutasAgrupadas).map(([fecha, rutas]) => {
-              // Reconstruimos un Date para el formato, asumiendo zona horaria UTC o local
-              const dateObj = new Date(fecha + 'T12:00:00')
+          {/* Listado Agrupado o Estado Vacío de Rutas */}
+          {hojaRutaActiva.rutas.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-200 border-dashed p-10 flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4">
+                <Route className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Hoja de ruta sin asignar</h3>
+              <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                Tu hoja de ruta está lista, pero aún no se le han asignado viajes. Contacta con el administrador o asigna las rutas.
+              </p>
+              <Link 
+                href="/oficinista/rutas/asignar"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-blue-50 text-blue-700 font-medium hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm"
+              >
+                <Plus className="w-5 h-5 mr-2 -ml-1" />
+                Agregar rutas a esta hoja
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {Object.entries(rutasAgrupadas).map(([fecha, rutas]) => {
+                // Reconstruimos un Date para el formato, asumiendo zona horaria UTC o local
+                const dateObj = new Date(fecha + 'T12:00:00')
 
               return (
                 <div key={fecha} className="space-y-4">
@@ -251,8 +263,9 @@ export default async function HojaRutaPage() {
                   </div>
                 </div>
               )
-            })}
-          </div>
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
