@@ -47,11 +47,11 @@ export async function GET(request: NextRequest) {
       select: { asientoId: true }
     })
 
-    const asientosOcupados = new Set(boletosVendidos.map(b => b.asientoId))
+    const asientosOcupados = new Set(boletosVendidos.map((b: { asientoId: string }) => b.asientoId))
 
     // Construir respuesta con todos los asientos y su estado
-    const asientos = ruta.bus.categorias.flatMap(categoria =>
-      categoria.asientos.map(asiento => ({
+    const asientos = ruta.bus.categorias.flatMap((categoria: any) =>
+      categoria.asientos.map((asiento: any) => ({
         id: asiento.id,
         numero: asiento.numero,
         etiqueta: asiento.etiqueta,

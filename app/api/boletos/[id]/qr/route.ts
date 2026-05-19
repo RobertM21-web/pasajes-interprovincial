@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
-import QRCode from 'qrcode'
+import { generateBoletoQR } from '@/lib/qr'
 
-// GET /api/boletos/[id]/qr — generar QR de un boleto
+// GET /api/boletos/[id]/qr — generar o regenerar QR de un boleto
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -10,6 +10,7 @@ export async function GET(
   try {
     const { id } = params
 
+    // Validamos primero la existencia para retornar los datos en la respuesta
     const boleto = await prisma.boleto.findUnique({
       where: { id },
       include: {
@@ -36,32 +37,8 @@ export async function GET(
       )
     }
 
-    // Datos que va a contener el QR
-    const qrData = JSON.stringify({
-      boletoId: boleto.id,
-      pasajero: boleto.pasajeroNombre,
-      cedula: boleto.pasajeroCedula,
-      origen: boleto.origenTramo,
-      destino: boleto.destinoTramo,
-      fecha: boleto.ruta.fecha,
-      hora: boleto.ruta.frecuencia.hora,
-      asiento: boleto.asiento.etiqueta,
-      precio: boleto.precioFinal,
-      estado: boleto.estado
-    })
-
-    // Generar QR como base64
-    const qrBase64 = await QRCode.toDataURL(qrData, {
-      errorCorrectionLevel: 'M',
-      width: 300,
-      margin: 2
-    })
-
-    // Guardar el QR en la base de datos
-    await prisma.boleto.update({
-      where: { id },
-      data: { codigoQr: qrBase64 }
-    })
+    // Generar el QR usando la función reutilizable
+    const qrBase64 = await generateBoletoQR(id)
 
     return NextResponse.json({
       boletoId: boleto.id,
@@ -73,10 +50,11 @@ export async function GET(
       hora: boleto.ruta.frecuencia.hora,
       qr: qrBase64
     })
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error al generar QR:', error)
     return NextResponse.json(
-      { error: 'Error al generar QR' },
+      { error: error.message || 'Error al generar QR' },
       { status: 500 }
     )
   }
-}
+}
