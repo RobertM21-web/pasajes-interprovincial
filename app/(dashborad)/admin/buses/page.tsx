@@ -350,7 +350,34 @@ export default function BusesAdminPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6 font-sans">
       
-
+      {/* MODAL PERSONALIZADO DE ELIMINACIÓN */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xl max-w-md w-full text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600 mb-4">
+              <AlertCircle className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-950">¿Eliminar esta Unidad?</h3>
+            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+              Esta acción es irreversible. El sistema verificará si hay rutas activas para aplicar un borrado lógico (desactivación) o físico de manera automática.
+            </p>
+            <div className="mt-6 flex justify-center space-x-3">
+              <button 
+                onClick={() => setIsDeleteConfirmOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 border border-slate-200 rounded-xl transition"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleConfirmDeleteBus}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md transition"
+              >
+                Confirmar Borrado
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Encabezado del Módulo */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm">
@@ -444,6 +471,13 @@ export default function BusesAdminPage() {
                             title="Editar bus"
                           >
                             <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => triggerDeleteBus(bus.id)}
+                            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition inline-flex"
+                            title="Borrar bus"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>
