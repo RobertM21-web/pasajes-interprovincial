@@ -26,9 +26,11 @@ interface FrecuenciaModalProps {
   isOpen: boolean;
   onClose: (refresh?: boolean) => void;
   frecuencia: Frecuencia | null;
+  onSuccess?: (message: string) => void;
+  onError?: (message: string) => void;
 }
 
-export default function FrecuenciaModal({ isOpen, onClose, frecuencia }: FrecuenciaModalProps) {
+export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess, onError }: FrecuenciaModalProps) {
   const [formData, setFormData] = useState<Frecuencia>({
     ciudadOrigen: '',
     ciudadDestino: '',
@@ -45,11 +47,13 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia }: Frecuen
   useEffect(() => {
     if (isOpen) {
       if (frecuencia) {
+        // Pre-llenar datos si es edición, garantizando que el arreglo paradas esté presente
         setFormData({
           ...frecuencia,
           paradas: frecuencia.paradas || [],
         });
       } else {
+        // Limpiar para nueva creación
         setFormData({
           ciudadOrigen: '',
           ciudadDestino: '',
@@ -130,6 +134,7 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia }: Frecuen
 
     try {
       setLoading(true);
+      // PUT para editar, POST para crear
       const url = frecuencia?.id ? `/api/frecuencias/${frecuencia.id}` : '/api/frecuencias';
       const method = frecuencia?.id ? 'PUT' : 'POST';
 
@@ -140,13 +145,21 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia }: Frecuen
       });
 
       if (!res.ok) {
-        throw new Error('Error en la petición');
+        throw new Error('Error en la petición al servidor');
       }
 
-      onClose(true);
+      if (onSuccess) {
+        onSuccess(frecuencia?.id ? 'Frecuencia actualizada correctamente' : 'Frecuencia creada exitosamente');
+      }
+      
+      onClose(true); // Refresca los datos en la tabla principal
     } catch (error) {
       console.error(error);
-      setErrors({ global: 'Ocurrió un error al guardar la frecuencia. Por favor, revisa tu conexión e inténtalo de nuevo.' });
+      if (onError) {
+        onError('Ocurrió un error al guardar la frecuencia. Por favor, inténtalo de nuevo.');
+      } else {
+        setErrors({ global: 'Ocurrió un error al guardar. Verifica tu conexión.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -158,7 +171,6 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia }: Frecuen
         <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden translate-x-[-50%] translate-y-[-50%] border border-slate-200 bg-white shadow-2xl duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-2xl dark:border-slate-800 dark:bg-slate-900">
           
-          {/* Header del Modal */}
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 px-6 py-4 sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md z-10">
             <Dialog.Title className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <Clock className="w-5 h-5 text-indigo-500" />
