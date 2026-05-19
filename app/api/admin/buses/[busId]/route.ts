@@ -94,3 +94,42 @@ export async function PUT(
   }
 }
 
+// DELETE - Eliminar bus (soft delete o hard delete)
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ busId: string }> }
+) {
+  const { busId } = await params;
+  try {
+    // Verificar si el bus tiene rutas activas
+    const busEnUso = await prisma.ruta.findFirst({
+      where: {
+        busId: busId,
+      },
+    });
+
+    if (busEnUso) {
+      // Soft delete: solo desactivar
+      await prisma.bus.update({
+        where: { id: busId },
+        data: { activo: false },
+      });
+
+      return NextResponse.json({
+        message: "Bus desactivado (tiene rutas asociadas)",
+      });
+    }
+
+    // Hard delete: eliminar (las categorías y asientos se eliminan por cascade)
+    await prisma.bus.delete({
+      where: { id: busId },
+    });
+
+    return NextResponse.json({ message: "Bus eliminado permanentemente" });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Error al eliminar el bus" },
+      { status: 500 }
+    );
+  }
+}
