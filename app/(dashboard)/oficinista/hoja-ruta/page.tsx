@@ -5,6 +5,7 @@ import { FileText, Map, Bus, Clock, Calendar as CalendarIcon, Plus, CheckCircle2
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import { CrearHojaRutaModal } from '@/components/hoja-ruta/CrearHojaRutaModal'
+import { HabilitarRutaModal } from '@/components/hoja-ruta/HabilitarRutaModal'
 
 export default async function HojaRutaPage() {
   const session = await getServerSession()
@@ -113,8 +114,14 @@ export default async function HojaRutaPage() {
           <p className="text-gray-500 mt-1">Gestión de rutas y frecuencias asignadas</p>
         </div>
         
-        {!hojaRutaActiva && (
+        {!hojaRutaActiva ? (
           <CrearHojaRutaModal />
+        ) : (
+          <HabilitarRutaModal hojaRuta={{
+            id: hojaRutaActiva.id,
+            fechaInicio: hojaRutaActiva.fechaInicio.toISOString(),
+            tipo: hojaRutaActiva.tipo
+          }} />
         )}
       </div>
 
@@ -173,13 +180,16 @@ export default async function HojaRutaPage() {
               <p className="text-gray-500 max-w-sm mx-auto mb-6">
                 Tu hoja de ruta está lista, pero aún no se le han asignado viajes. Contacta con el administrador o asigna las rutas.
               </p>
-              <Link 
-                href="/oficinista/rutas/asignar"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-blue-50 text-blue-700 font-medium hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm"
-              >
-                <Plus className="w-5 h-5 mr-2 -ml-1" />
-                Agregar rutas a esta hoja
-              </Link>
+              <HabilitarRutaModal hojaRuta={{
+                id: hojaRutaActiva.id,
+                fechaInicio: hojaRutaActiva.fechaInicio.toISOString(),
+                tipo: hojaRutaActiva.tipo
+              }}>
+                <button className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-blue-50 text-blue-700 font-medium hover:bg-blue-100 transition-colors border border-blue-200 shadow-sm">
+                  <Plus className="w-5 h-5 mr-2 -ml-1" />
+                  Agregar rutas a esta hoja
+                </button>
+              </HabilitarRutaModal>
             </div>
           ) : (
             <div className="space-y-8">
