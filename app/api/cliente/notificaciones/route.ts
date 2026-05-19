@@ -59,3 +59,34 @@ export async function GET(request: Request) {
     );
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { usuarioId, titulo, mensaje, tipo } = body;
+
+    if (!usuarioId || !titulo || !mensaje) {
+      return NextResponse.json(
+        { error: "usuarioId, titulo y mensaje son obligatorios" },
+        { status: 400 }
+      );
+    }
+
+    const notificacion = await prisma.notificacion.create({
+      data: {
+        usuarioId,
+        titulo,
+        mensaje,
+        tipo: tipo || "INFO",
+      },
+    });
+
+    return NextResponse.json(notificacion, { status: 201 });
+  } catch (error) {
+    console.error("Error al crear notificación:", error);
+    return NextResponse.json(
+      { error: "Error al crear notificación" },
+      { status: 500 }
+    );
+  }
+}
