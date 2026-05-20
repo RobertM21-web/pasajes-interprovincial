@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Verificar que la ruta existe
+    // Verificar que la ruta existe con el diseño de relaciones de Sandro
     const ruta = await prisma.ruta.findUnique({
       where: { id: rutaId },
       include: {
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     const asientosOcupados = new Set(boletosVendidos.map(b => b.asientoId))
 
-    // Construir respuesta con todos los asientos y su estado
+    // Construir respuesta asegurando que el precioBase se procese como número decimal correcto
     const asientos = ruta.bus.categorias.flatMap(categoria =>
       categoria.asientos.map(asiento => ({
         id: asiento.id,
@@ -57,8 +57,8 @@ export async function GET(request: NextRequest) {
         etiqueta: asiento.etiqueta,
         fila: asiento.fila,
         posicion: asiento.posicion,
-        categoria: categoria.nombre,
-        precioBase: categoria.precioBase,
+        categoria: categoria.nombre, // Recibe "NORMAL", "VIP", "DISCAPACIDAD", etc.
+        precioBase: Number(categoria.precioBase), // Forzado a número para que no falle .toFixed()
         ocupado: asientosOcupados.has(asiento.id)
       }))
     )
@@ -78,9 +78,10 @@ export async function GET(request: NextRequest) {
       },
       asientos
     })
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Error detallado en selector-asientos:", error)
     return NextResponse.json(
-      { error: 'Error al obtener asientos' },
+      { error: 'Error al obtener asientos', detalle: error.message },
       { status: 500 }
     )
   }
