@@ -1,27 +1,34 @@
 /**
  * Página: Historial de compras del cliente
- * Server Component que obtiene los boletos desde la API
+ * Client Component que obtiene boletos desde /api/boletos/historial
  *
  * Características:
  * - Obtiene todos los boletos del usuario autenticado
  * - Ordena por createdAt DESC
  * - Incluye relaciones: ruta (con frecuencia) y asiento (con categoría)
- * - Filtro por estado
- * - Paginación
+ * - Filtro interactivo por estado (tabs)
+ * - Paginación (Anterior/Siguiente)
+ * - Contador "Mostrando X de Y boletos"
  * - Empty state cuando no hay boletos
+ * - Loading state con skeleton
+ * - Error handling
  */
 
-import { Suspense } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BoletoCard } from "./boleto-card";
 import { EmptyState } from "./empty-state";
 import { EstadoFilter } from "./estado-filter";
+import { Pagination } from "./pagination";
+import { BoletoListSkeleton } from "./skeleton";
 
 /**
  * Props que recibe la página del Next.js router
  */
 interface HistorialPageProps {
   searchParams: Promise<{
-    usuarioId?: string;
     estado?: string;
     page?: string;
   }>;
@@ -51,6 +58,7 @@ interface Boleto {
   ruta: {
     origen: string;
     destino: string;
+    hora: string;
     busNumero: string;
     busPlaca: string;
   };
@@ -77,131 +85,63 @@ interface HistorialResponse {
 }
 
 /**
- * Obtiene el historial de boletos desde la API
+ * Página principal: Historial de compras (Client Component)
  */
-async function obtenerHistorial(
-  usuarioId: string,
-  estado?: string,
-  page?: string
-): Promise<HistorialResponse> {
-  const params = new URLSearchParams({
-    usuarioId,
-  });
+export default function HistorialPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  if (estado) params.append("estado", estado);
-  if (page) params.append("page", page);
+  // Estados
+  const [boletos, setBoletos] = useState<Boleto[]>([]);
+  const [paginacion, setPaginacion] = useState<HistorialResponse["paginacion"] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/cliente/historial?${params}`, {
-      next: { revalidate: 60 }, // Revalidar cada 60 segundos
-    });
+  // Parámetros actuales
+  const estado = searchParams.get("estado") || null;
+  const page = parseInt(searchParams.get("page") || "1");
 
-    if (!response.ok) {
-      throw new Error("Error al obtener historial");
-    }
+  // TODO: Obtener usuarioId de NextAuth cuando esté configurado
+  const usuarioId = "test-user-id"; // Placeholder
 
-    return response.json();
-  } catch (error) {
-    console.error("Error al obtener historial:", error);
-    throw error;
-  }
-}
+  // Efecto: Cargar boletos cuando cambien los parámetros
+  useEffect(() => {
+    const cargarBoletos = async () => {
+      setLoading(true);
+      setError(null);
 
-/**
- * Componente que renderiza el contenido del historial
- */
-async function HistorialContent({
-  usuarioId,
-  estado,
-  page,
-}: {
-  usuarioId: string;
-  estado?: string;
-  page?: string;
-}) {
-  try {
-    const data = await obtenerHistorial(usuarioId, estado, page);
+      try {
+        const params = new URLSearchParams({
+          usuarioId,
+          page: page.toString(),
+        });
 
-    if (!data.boletos || data.boletos.length === 0) {
-      return <EmptyState />;
-    }
+        if (estado) {
+          params.append("estado", estado);
+        }
 
-    return (
-      <div className="space-y-6">
-        {/* Grid de tarjetas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data.boletos.map((boleto) => (
-            <BoletoCard key={boleto.id} boleto={boleto} />
-          ))}
-        </div>
+        const response = await fetch(`/api/boletos/historial?${params}`);
 
-        {/* Información de paginación */}
-        {data.paginacion && (
-          <div className="flex items-center justify-between py-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
-              Mostrando {data.boletos.length} de {data.paginacion.total} boletos
-            </p>
-            <p className="text-sm text-gray-600">
-              Página {data.paginacion.page} de {data.paginacion.totalPages}
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  } catch (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <h3 className="text-lg font-semibold text-red-900 mb-2">
-          Error al cargar historial
-        </h3>
-        <p className="text-red-700">
-          No pudimos obtener tus boletos. Por favor, intenta más tarde.
-        </p>
-      </div>
-    );
-  }
-}
+        if (!response.ok) {
+          throw new Error("Error al obtener historial");
+        }
 
-/**
- * Página principal: Historial de compras
- */
-export default async function HistorialPage({
-  searchParams,
-}: HistorialPageProps) {
-  const params = await searchParams;
+        const data: HistorialResponse = await response.json();
+        setBoletos(data.boletos);
+        setPaginacion(data.paginacion);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Error desconocido al cargar boletos"
+        );
+        setBoletos([]);
+        setPaginacion(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // TODO: En producción, obtener usuarioId de la sesión NextAuth
-  // const session = await getServerSession(authOptions);
-  // const usuarioId = session?.user?.id;
-  const usuarioId = params.usuarioId || "";
-
-  if (!usuarioId) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-            <h2 className="text-lg font-semibold text-yellow-900 mb-2">
-              Identificación requerida
-            </h2>
-            <p className="text-yellow-700 mb-4">
-              Por favor, inicia sesión para ver tu historial de compras.
-            </p>
-            <a
-              href="/auth/login"
-              className={`
-                inline-flex items-center justify-center
-                px-6 py-2.5 rounded-lg font-medium text-sm
-                bg-blue-600 text-white hover:bg-blue-700
-                transition-colors duration-200
-              `}
-            >
-              Iniciar sesión
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    cargarBoletos();
+  }, [estado, page, usuarioId]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -225,33 +165,55 @@ export default async function HistorialPage({
         </div>
 
         {/* Contenido principal */}
-        <Suspense
-          fallback={
+        {loading ? (
+          <BoletoListSkeleton />
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <h3 className="text-lg font-semibold text-red-900 mb-2">
+              Error al cargar historial
+            </h3>
+            <p className="text-red-700 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className={`
+                inline-flex items-center justify-center
+                px-6 py-2.5 rounded-lg font-medium text-sm
+                bg-red-600 text-white hover:bg-red-700
+                transition-colors duration-200
+              `}
+            >
+              Intentar de nuevo
+            </button>
+          </div>
+        ) : boletos.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <>
+            {/* Contador */}
+            <div className="mb-6">
+              <p className="text-sm text-gray-600">
+                Mostrando <span className="font-semibold">{boletos.length}</span> de{" "}
+                <span className="font-semibold">{paginacion?.total || 0}</span> boletos
+              </p>
+            </div>
+
+            {/* Grid de tarjetas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-lg h-64 animate-pulse"
-                />
+              {boletos.map((boleto) => (
+                <BoletoCard key={boleto.id} boleto={boleto} />
               ))}
             </div>
-          }
-        >
-          <HistorialContent
-            usuarioId={usuarioId}
-            estado={params.estado}
-            page={params.page}
-          />
-        </Suspense>
+
+            {/* Paginación */}
+            {paginacion && paginacion.totalPages > 1 && (
+              <Pagination
+                currentPage={paginacion.page}
+                totalPages={paginacion.totalPages}
+              />
+            )}
+          </>
+        )}
       </div>
     </div>
   );
 }
-
-/**
- * Metadatos de la página
- */
-export const metadata = {
-  title: "Historial de Compras",
-  description: "Ver el historial de boletos comprados",
-};

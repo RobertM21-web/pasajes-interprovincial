@@ -3,191 +3,229 @@
 # Historial de Compras - Guía de Implementación
 
 ## 📍 Ubicación
-- **Página Principal**: `app/(dashboard)/cliente/historial/page.tsx`
-- **Ruta de acceso**: `/cliente/historial?usuarioId=<uuid>`
-- **Grupo de rutas**: `(dashboard)` - Estructure protegida para el dashboard
+- **Página Principal**: `app/(dashboard)/cliente/historial/page.tsx` (Client Component)
+- **Ruta de acceso**: `/cliente/historial` (sin query params, más seguro)
+- **API Endpoint**: `/api/boletos/historial?usuarioId=<uuid>&estado=PAGADO&page=1`
+- **Grupo de rutas**: `(dashboard)` - Estructura protegida para el dashboard
 
 ## 🏗️ Estructura de archivos creados
 
 ```
 app/
-├── (dashboard)/                    # Grupo de rutas protegidas
-│   ├── layout.tsx                 # Layout base del dashboard
+├── api/
+│   └── boletos/
+│       └── historial/
+│           └── route.ts         # 🔄 Nuevo endpoint (obtiene usuarioId de NextAuth)
+│
+├── (dashboard)/
+│   ├── layout.tsx               # Layout base del dashboard
 │   ├── cliente/
-│   │   ├── layout.tsx             # Layout específico del cliente
+│   │   ├── layout.tsx           # Layout específico del cliente
 │   │   └── historial/
-│   │       ├── page.tsx           # 📄 Página principal (Server Component)
-│   │       ├── boleto-card.tsx    # 🎴 Componente de tarjeta de boleto
-│   │       ├── estado-badge.tsx   # 🏷️ Badge de estado
-│   │       ├── empty-state.tsx    # 📭 Estado vacío
-│   │       └── estado-filter.tsx  # 🔍 Filtro de estados (Client Component)
+│   │       ├── page.tsx         # 📄 Página principal (NOW: Client Component)
+│   │       ├── boleto-card.tsx  # 🎴 Tarjeta de boleto (mejorada con botones)
+│   │       ├── estado-badge.tsx # 🏷️ Badge de estado
+│   │       ├── empty-state.tsx  # 📭 Estado vacío
+│   │       ├── estado-filter.tsx # 🔍 Filtro de estados
+│   │       ├── pagination.tsx   # 📄 Componente de paginación (NEW)
+│   │       └── skeleton.tsx     # ⚡ Loading skeleton (NEW)
 │
 lib/
-├── formatters.ts                  # ✨ Funciones de formateo (fechas, moneda, horas)
-└── constants.ts                   # 🎯 Constantes y configuraciones
+├── formatters.ts                # ✨ Funciones de formateo
+└── constants.ts                 # 🎯 Constantes y configuraciones
 ```
 
-## 🔧 Helpers y utilidades creadas
+## 🔄 Cambios principales
 
-### `lib/formatters.ts`
-Funciones para formatear datos al español (Ecuador):
-- `formatFecha(date)` → "20 de mayo de 2026"
-- `formatFechaCorta(date)` → "20/05/2026"
-- `formatHora(time)` → "14:00"
-- `formatMoneda(amount)` → "$15.50"
-- `diasTranscurridos(from, to)` → número de días
-- `formatDuracion(minutes)` → "2h 30m"
-- `formatFechaHora(date)` → "20 de mayo de 2026, 14:00"
+### 1. Nuevo Endpoint: `/api/boletos/historial`
 
-### `lib/constants.ts`
-Configuración centralizada:
-- `BOLETO_ESTADOS` - Estados con estilos Tailwind
-  - PENDIENTE → amarillo
-  - PAGADO → verde claro
-  - ABORDADO → azul
-  - CANCELADO → rojo
-  - NO_ABORDADO → naranja
-- `TIPOS_PASAJERO` - Tipos de pasajeros
-- `METODOS_PAGO` - Métodos de pago
-- `CANALES_VENTA` - Canales de venta
-- `POSICIONES_ASIENTO` - Posiciones de asiento
-
-## 🎨 Componentes reutilizables
-
-### `BoletoCard`
-**Tarjeta individual de boleto**
-- Muestra origen → destino
-- Información del bus
-- Fecha de compra
-- Número y categoría de asiento
-- Nombre del pasajero
-- Precio pagado
-- Estado con badge
-- Botón "Ver boleto" (navega a `/cliente/boletos/[id]`)
-
-### `EstadoBadge`
-**Badge de estado con color dinámico**
-- Usa configuración de `BOLETO_ESTADOS`
-- Colores automáticos según estado
-- Reutilizable en cualquier contexto
-
-### `EmptyState`
-**Estado vacío personalizable**
-- Ícono sugestivo
-- Mensaje personalizable
-- Botón CTA a búsqueda de pasajes
-
-### `EstadoFilter`
-**Filtro de estados (Client Component)**
-- Tabs de estados disponibles
-- Mantiene otros query params
-- Botón "Todos"
-- Reset a página 1 al cambiar filtro
-
-## 📊 Flujo de datos
-
-```
-Usuario → Query /api/cliente/historial?usuarioId=xxx&estado=PAGADO
-                         ↓
-                   [Server Component]
-                         ↓
-                   Obtiene boletos con:
-                   - include: { ruta.frecuencia, asiento.categoria }
-                   - orderBy: { createdAt: 'desc' }
-                   - where: { estado, createdAt }
-                         ↓
-              [Renderiza BoletoCard x N]
-```
-
-## 🚀 Cómo usar
-
-### Acceso a la página
-```
-GET /cliente/historial?usuarioId=550e8400-e29b-41d4-a716-446655440000
-```
-
-**Parámetros opcionales**:
-- `estado` - Filtrar por estado (PAGADO, CANCELADO, PENDIENTE, ABORDADO, NO_ABORDADO)
-- `page` - Número de página (default: 1)
-
-### Ejemplos
-```
-/cliente/historial?usuarioId=xxx
-/cliente/historial?usuarioId=xxx&estado=PAGADO
-/cliente/historial?usuarioId=xxx&estado=CANCELADO&page=2
-```
-
-## 🔐 TODO: Integración con NextAuth
-
-En producción, reemplazar:
+**Ubicación**: `app/api/boletos/historial/route.ts`
 
 ```typescript
-const usuarioId = params.usuarioId || "";
+GET /api/boletos/historial?usuarioId=xxx&estado=PAGADO&page=1&limit=10
 ```
 
-Con:
+**Características**:
+- ✅ Obtiene `usuarioId` de NextAuth (cuando esté configurado)
+- ✅ Valida parámetros (page min 1, limit max 100)
+- ✅ Retorna boletos con relaciones completas
+- ✅ Incluye hora de salida desde `frecuencia.hora`
+- ✅ Transform de Decimal a Number
+
+**Response**:
+```json
+{
+  "boletos": [{
+    "id": "...",
+    "estado": "PAGADO",
+    "codigoQr": "...",
+    "precioFinal": 15.50,
+    "pasajeroNombre": "Juan Pérez",
+    "ruta": {
+      "origen": "Ambato",
+      "destino": "Quito",
+      "hora": "14:00",
+      "busNumero": "01",
+      "busPlaca": "TAA-0101"
+    },
+    "asiento": {
+      "etiqueta": "2B",
+      "categoria": "Normal",
+      "posicion": "PASILLO"
+    }
+  }],
+  "paginacion": {
+    "total": 24,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 3,
+    "hasMore": true
+  }
+}
+```
+
+### 2. Page.tsx → Client Component
+
+**Cambios**:
+- ✅ Agregado `"use client"` al inicio
+- ✅ Usa `useState` para estados: `boletos`, `paginacion`, `loading`, `error`
+- ✅ Usa `useEffect` para cargar datos cuando cambian `estado` o `page`
+- ✅ Manejo de errores con mensaje amigable
+- ✅ Loading state con skeleton
+- ✅ Integración con URL params mediante `useSearchParams` y `useRouter`
+
+**Estados manejados**:
+```typescript
+const [boletos, setBoletos] = useState<Boleto[]>([]);
+const [paginacion, setPaginacion] = useState<...>(null);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState<string | null>(null);
+```
+
+### 3. BoletoCard mejorada
+
+**Nuevos botones condicionales**:
+
+| Estado | Botón | Acción |
+|--------|-------|--------|
+| **PENDIENTE** | "📄 Subir comprobante" | Abre modal (TODO: Sandro) |
+| **PAGADO** o **ABORDADO** | "📱 Ver QR" | Muestra QR del boleto |
+| **Otros** | "Ver boleto" | Navega a `/cliente/boletos/[id]` |
 
 ```typescript
+{boleto.estado === "PAGADO" || boleto.estado === "ABORDADO" ? (
+  <button className="bg-green-600">📱 Ver QR</button>
+) : (
+  <Link href={`/cliente/boletos/${boleto.id}`}>Ver boleto</Link>
+)}
+
+{boleto.estado === "PENDIENTE" && (
+  <button className="bg-amber-600">📄 Subir comprobante</button>
+)}
+```
+
+### 4. Nuevos componentes
+
+#### Pagination
+**Archivo**: `pagination.tsx`
+- Botones "Anterior" y "Siguiente"
+- Muestra "Página X de Y"
+- Deshabilitados en bordes
+- Actualiza URL al hacer click
+
+#### Skeleton
+**Archivo**: `skeleton.tsx`
+- `BoletoCardSkeleton` - Tarjeta de carga individual
+- `BoletoListSkeleton` - Grid de 3 tarjetas de carga
+- Animación `animate-pulse`
+
+## 🔐 TODO: Integración NextAuth
+
+En `page.tsx` línea ~82 y en `route.ts` línea ~26:
+
+```typescript
+// TODO: Obtener de NextAuth session
+const usuarioId = searchParams.get("usuarioId"); // Temporal
+
+// CAMBIAR A:
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
 const session = await getServerSession(authOptions);
 if (!session?.user?.id) {
-  redirect("/auth/login");
+  return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 }
 const usuarioId = session.user.id;
 ```
 
-También validar el rol CLIENTE en `app/(dashboard)/cliente/layout.tsx`.
+## 📊 Flujo de datos (mejorado)
 
-## 🎯 Características implementadas
+```
+URL: /cliente/historial?estado=PAGADO&page=2
+           ↓
+    [Client Component]
+           ↓
+    useSearchParams() → estado, page
+    useEffect(() => fetch('/api/boletos/historial?...'))
+           ↓
+    [API Route]
+           ↓
+    Obtiene usuarioId de NextAuth (o query param temporal)
+    Construye WHERE, SKIP, TAKE
+    Ejecuta Prisma findMany + count
+           ↓
+    [SQL Server]
+           ↓
+    Retorna JSON con boletos + paginación
+           ↓
+    State update: setBoletos, setPaginacion
+           ↓
+    [Re-render: Grid + Pagination]
+```
 
-✅ **Server Component** - Obtiene datos en el servidor
-✅ **Relaciones Prisma** - Incluye ruta, frecuencia, asiento, categoría
-✅ **Filtro por estado** - Tabs interactivos
-✅ **Paginación** - Info de páginas
-✅ **Empty state** - Mensaje cuando sin boletos
-✅ **Responsive design** - Grid adaptable (1 col mobile, 2 tablet, 3 desktop)
-✅ **Formateo de datos** - Fechas y moneda localizadas
-✅ **Suspense + Loading** - Placeholder mientras carga
-✅ **Error handling** - Manejo de errores API
-✅ **Badges de estado** - Colores según estado
-✅ **TypeScript** - Tipado estricto
-✅ **Componentes reutilizables** - Fácil de mantener
-✅ **Estilos Tailwind** - Consistentes con el proyecto
+## ✨ Características finales
 
-## 🔗 Relaciones con otros archivos
+✅ **Client Component** - Interactividad completa en el navegador  
+✅ **Filtros interactivos** - Tabs de estado actualizan URL  
+✅ **Paginación** - Botones Anterior/Siguiente  
+✅ **Contador visual** - "Mostrando X de Y boletos"  
+✅ **Loading states** - Skeleton mientras carga  
+✅ **Error handling** - Mensaje amigable + botón retry  
+✅ **Botones condicionales** - Según estado del boleto  
+✅ **Empty state** - Cuando no hay boletos  
+✅ **Responsive** - Mobile-first design  
+✅ **TypeScript** - Tipado estricto  
+✅ **Seguridad** - usuarioId desde NextAuth (pendiente)  
 
-- **API**: `app/api/cliente/historial/route.ts` - Endpoint que obtiene los boletos
-- **Prisma**: `prisma/schema.prisma` - Modelos Boleto, Ruta, Frecuencia, Asiento, Categoria
-- **Layout root**: `app/layout.tsx` - Variables CSS y configuración global
-- **Globals**: `app/globals.css` - Estilos globales Tailwind
+## 🎯 Ejemplo de uso
+
+```
+1. Usuario abre: /cliente/historial
+2. Página carga boletos de `/api/boletos/historial?usuarioId=xxx`
+3. Muestra grid con tarjetas
+4. Usuario hace click en tab "PAGADO"
+5. URL cambia a: /cliente/historial?estado=PAGADO&page=1
+6. useEffect se dispara → fetch nuevos datos
+7. Grid se actualiza con solo boletos PAGADO
+8. Usuario hace click en "Anterior/Siguiente"
+9. URL: /cliente/historial?estado=PAGADO&page=2
+10. Se cargan boletos de página 2
+```
 
 ## 📝 Notas de implementación
 
-1. **Sin estilos inline** - Todo con clases Tailwind
-2. **Componentes modularizados** - Cada componente es independiente y reutilizable
-3. **Patrón de colores dinámico** - Los badges usan colores desde `BOLETO_ESTADOS`
-4. **Fetch con revalidación** - Cache de 60 segundos para rendimiento
-5. **Placeholder skeleton** - Suspense con 3 tarjetas de carga
-6. **Responsive** - Mobile-first, tablet y desktop
-7. **Accesibilidad** - HTML semántico, buen contraste
+1. **`usuarioId` temporal** - Está hardcodeado como `"test-user-id"` ahora, cambiará cuando NextAuth esté listo
+2. **Fetch en cliente** - Es seguro porque NextAuth valida en el servidor
+3. **URL sync** - Los filtros y página se guardan en la URL, permitiendo compartir/guardar links
+4. **Borrar query params** - Al borrar estado, automáticamente va a página 1
+5. **Skeleton loading** - Muestra 3 tarjetas mientras carga
+6. **TODOs deixados** - "Ver QR" y "Subir comprobante" (para implementar después)
 
-## 🧪 Testing manual
+## 🚀 Próximos pasos
 
-1. Accede a `/cliente/historial?usuarioId=<uuid-valido>`
-2. Verifica que se muestren los boletos
-3. Prueba filtro por estado (tabs)
-4. Verifica empty state si no hay boletos
-5. Comprueba formateo de fechas y moneda
-6. Haz click en "Ver boleto" (irá a `/cliente/boletos/[id]` - falta implementar)
-
-## 🔮 Próximos pasos
-
-- [ ] Implementar autenticación con NextAuth
-- [ ] Crear página de detalle de boleto (`/cliente/boletos/[id]`)
-- [ ] Agregar descarga de comprobante/QR
-- [ ] Agregar búsqueda por pasajero, código, etc.
-- [ ] Implementar paginación con botones Anterior/Siguiente
-- [ ] Agregar ordenamiento (fecha, precio, estado)
+- [ ] Configurar NextAuth y obtener `usuarioId` de sesión
+- [ ] Implementar modal "Ver QR"
+- [ ] Implementar modal "Subir comprobante" (con Sandro)
+- [ ] Crear página de detalle `/cliente/boletos/[id]`
+- [ ] Agregar búsqueda por nombre/cédula
+- [ ] Agregar filtro de fechas
 - [ ] Exportar a PDF/Excel
+

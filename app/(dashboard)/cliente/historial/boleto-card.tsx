@@ -89,19 +89,55 @@ export function BoletoCard({ boleto }: BoletoCardProps) {
         </div>
       </div>
 
-      {/* Botón Ver Boleto */}
-      <div className="pt-2 border-t border-gray-100">
-        <Link
-          href={`/cliente/boletos/${boleto.id}`}
-          className={`
-            w-full inline-flex items-center justify-center
-            px-4 py-2.5 rounded-lg font-medium text-sm
-            bg-blue-600 text-white hover:bg-blue-700
-            transition-colors duration-200
-          `}
-        >
-          Ver boleto
-        </Link>
+      {/* Botones de acciones */}
+      <div className="pt-2 border-t border-gray-100 space-y-2">
+        {/* Botón primario: Ver boleto o Ver QR */}
+        {boleto.estado === "PAGADO" || boleto.estado === "ABORDADO" ? (
+          <button
+            onClick={() => {
+              // TODO: Implementar modal o página de visualización del QR
+              console.log("Ver QR del boleto:", boleto.id);
+            }}
+            className={`
+              w-full inline-flex items-center justify-center
+              px-4 py-2.5 rounded-lg font-medium text-sm
+              bg-green-600 text-white hover:bg-green-700
+              transition-colors duration-200
+            `}
+          >
+            📱 Ver QR
+          </button>
+        ) : (
+          <Link
+            href={`/cliente/boletos/${boleto.id}`}
+            className={`
+              w-full inline-flex items-center justify-center
+              px-4 py-2.5 rounded-lg font-medium text-sm
+              bg-blue-600 text-white hover:bg-blue-700
+              transition-colors duration-200
+            `}
+          >
+            Ver boleto
+          </Link>
+        )}
+
+        {/* Botón secundario: Subir comprobante (solo si PENDIENTE) */}
+        {boleto.estado === "PENDIENTE" && (
+          <button
+            onClick={() => {
+              // TODO: Implementar modal de subida de comprobante (Sandro)
+              console.log("Subir comprobante para boleto:", boleto.id);
+            }}
+            className={`
+              w-full inline-flex items-center justify-center
+              px-4 py-2.5 rounded-lg font-medium text-sm
+              bg-amber-600 text-white hover:bg-amber-700
+              transition-colors duration-200
+            `}
+          >
+            📄 Subir comprobante
+          </button>
+        )}
       </div>
     </div>
   );

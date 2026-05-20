@@ -18,11 +18,12 @@ export function EstadoFilter() {
 
     if (estado) {
       params.set("estado", estado);
-      params.set("page", "1"); // Reset a página 1
     } else {
       params.delete("estado");
-      params.set("page", "1");
     }
+
+    // Reset a página 1 cuando cambias filtro
+    params.set("page", "1");
 
     router.push(`?${params.toString()}`, { scroll: false });
   };
@@ -33,10 +34,10 @@ export function EstadoFilter() {
       <button
         onClick={() => handleFilter(null)}
         className={`
-          px-4 py-2 rounded-lg font-medium text-sm transition-colors
+          px-4 py-2 rounded-lg font-medium text-sm transition-all
           ${
             estadoActual === null
-              ? "bg-blue-600 text-white"
+              ? "bg-blue-600 text-white shadow-md"
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
           }
         `}
@@ -50,10 +51,10 @@ export function EstadoFilter() {
           key={value}
           onClick={() => handleFilter(value)}
           className={`
-            px-4 py-2 rounded-lg font-medium text-sm transition-colors
+            px-4 py-2 rounded-lg font-medium text-sm transition-all
             ${
               estadoActual === value
-                ? "bg-blue-600 text-white"
+                ? "bg-blue-600 text-white shadow-md"
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }
           `}
