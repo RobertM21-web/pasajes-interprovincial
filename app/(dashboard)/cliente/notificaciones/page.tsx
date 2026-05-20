@@ -201,8 +201,87 @@ export default function NotificacionesClientePage() {
 
       {/* Contenedor Principal */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-        
-        {/* Pestañas de Filtro */}
+
+        {/* Lista de Notificaciones */}
+        <div className="divide-y divide-slate-100">
+          {loading && notificaciones.length === 0 ? (
+            <div className="p-12 text-center text-slate-400">
+              <div className="animate-spin h-8 w-8 border-4 border-blue-200 border-t-blue-600 rounded-full mx-auto mb-4"></div>
+              <p className="text-sm">Cargando bandeja...</p>
+            </div>
+          ) : notificaciones.length === 0 ? (
+            <div className="p-16 text-center">
+              <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Bell className="h-8 w-8 text-slate-300" />
+              </div>
+              <h3 className="text-slate-900 font-bold mb-1">Bandeja Vacía</h3>
+              <p className="text-sm text-slate-500">No tienes notificaciones {filtroLeidas === "NO_LEIDAS" ? "nuevas" : "en este momento"}.</p>
+            </div>
+          ) : (
+            notificaciones.map((notif) => {
+              const { Icon, color, bg } = getIconoTipo(notif.tipo);
+              const isUnread = !notif.leida;
+
+              return (
+                <div 
+                  key={notif.id} 
+                  className={`p-4 sm:p-5 transition-colors flex flex-col sm:flex-row gap-4 relative hover:bg-slate-50 group ${
+                    isUnread ? "bg-blue-50/30" : "bg-white"
+                  }`}
+                >
+                  {/* Punto Azul de No Leída */}
+                  {isUnread && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600"></div>
+                  )}
+
+                  {/* Icono Principal */}
+                  <div className="shrink-0 flex items-start pt-1">
+                    <div className={`${bg} ${color} p-2.5 rounded-full`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                  </div>
+
+                  {/* Contenido (Título, Mensaje, Fecha) */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h4 className={`text-sm truncate ${isUnread ? "font-bold text-slate-900" : "font-medium text-slate-700"}`}>
+                        {notif.titulo}
+                      </h4>
+                      <span className="text-[11px] font-medium text-slate-400 whitespace-nowrap bg-slate-100 px-2 py-0.5 rounded-full">
+                        {formatearFecha(notif.createdAt)}
+                      </span>
+                    </div>
+                    <p className={`text-sm leading-relaxed line-clamp-2 ${isUnread ? "text-slate-700" : "text-slate-500"}`}>
+                      {notif.mensaje}
+                    </p>
+                  </div>
+
+                  {/* Botones de Acción (Visibles en desktop al pasar el mouse, siempre en móvil) */}
+                  <div className="flex sm:flex-col sm:justify-start gap-2 shrink-0 sm:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 sm:pl-2">
+                    {isUnread && (
+                      <button
+                        onClick={() => handleMarcarLeida(notif.id)}
+                        className="flex-1 sm:flex-none flex items-center justify-center space-x-1 p-2 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                        title="Marcar como leída"
+                      >
+                        <Check className="h-4 w-4" />
+                        <span className="sm:hidden">Leída</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleEliminar(notif.id)}
+                      className="flex-1 sm:flex-none flex items-center justify-center space-x-1 p-2 text-xs font-semibold text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                      title="Eliminar notificación"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sm:hidden">Eliminar</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );
