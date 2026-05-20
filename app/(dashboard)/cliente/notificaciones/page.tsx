@@ -201,6 +201,35 @@ export default function NotificacionesClientePage() {
 
       {/* Contenedor Principal */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        
+        {/* Pestañas de Filtro */}
+        <div className="flex border-b border-slate-200 px-2 bg-slate-50/50">
+          <button
+            onClick={() => setFiltroLeidas("TODAS")}
+            className={`px-6 py-4 text-sm font-semibold transition-colors border-b-2 ${
+              filtroLeidas === "TODAS" 
+                ? "border-blue-600 text-blue-700" 
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Bandeja de Entrada
+          </button>
+          <button
+            onClick={() => setFiltroLeidas("NO_LEIDAS")}
+            className={`px-6 py-4 text-sm font-semibold transition-colors border-b-2 flex items-center space-x-2 ${
+              filtroLeidas === "NO_LEIDAS" 
+                ? "border-blue-600 text-blue-700" 
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <span>No Leídas</span>
+            {noLeidas > 0 && (
+              <span className="bg-blue-100 text-blue-700 py-0.5 px-2 rounded-full text-[10px]">
+                {noLeidas}
+              </span>
+            )}
+          </button>
+        </div>
 
         {/* Lista de Notificaciones */}
         <div className="divide-y divide-slate-100">
