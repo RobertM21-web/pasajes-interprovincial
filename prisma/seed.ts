@@ -3,19 +3,107 @@ import { PrismaMssql } from "@prisma/adapter-mssql";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
 
-const connectionString = process.env.DATABASE_URL!;
-const adapter = new PrismaMssql(connectionString);
+const adapter = new PrismaMssql(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("🌱 Iniciando seed de datos...");
 
   // ============================================
-  // 1. COOPERATIVA (configuración de la app)
+  // 1. ROLES
   // ============================================
-  const cooperativa = await prisma.cooperativa.create({
+  const rolAdmin = await prisma.rol.create({
     data: {
-      nombre: "Cooperativa de Transportes Ejemplo",
+      nombre: "ADMIN",
+      descripcion: "Administrador general de la cooperativa. Acceso total al sistema.",
+    },
+  });
+
+  const rolOficinista = await prisma.rol.create({
+    data: {
+      nombre: "OFICINISTA",
+      descripcion: "Personal de ventanilla. Habilita rutas, vende boletos, valida pagos y QR.",
+    },
+  });
+
+  const rolCliente = await prisma.rol.create({
+    data: {
+      nombre: "CLIENTE",
+      descripcion: "Usuario final. Compra boletos en línea.",
+    },
+  });
+  console.log("✅ Roles creados (ADMIN, OFICINISTA, CLIENTE)");
+
+  // ============================================
+  // 2. PERMISOS
+  // ============================================
+  const permisosData = [
+    // Admin
+    { clave: "gestionar_buses", nombre: "Gestionar buses", modulo: "admin", descripcion: "Crear, editar, eliminar y deshabilitar buses" },
+    { clave: "gestionar_frecuencias", nombre: "Gestionar frecuencias", modulo: "admin", descripcion: "Crear, editar y deshabilitar frecuencias" },
+    { clave: "gestionar_categorias_asiento", nombre: "Gestionar categorías de asiento", modulo: "admin", descripcion: "Crear y editar tipos de asiento por bus" },
+    { clave: "gestionar_usuarios", nombre: "Gestionar usuarios", modulo: "admin", descripcion: "Crear, editar y deshabilitar usuarios del sistema" },
+    { clave: "gestionar_roles", nombre: "Gestionar roles y permisos", modulo: "admin", descripcion: "Crear roles y asignar permisos" },
+    { clave: "gestionar_configuracion", nombre: "Gestionar configuración", modulo: "config", descripcion: "Editar logo, colores, redes sociales, soporte" },
+    // Oficinista
+    { clave: "habilitar_rutas", nombre: "Habilitar rutas diarias", modulo: "oficinista", descripcion: "Asignar buses a frecuencias para crear rutas" },
+    { clave: "gestionar_hoja_ruta", nombre: "Gestionar hoja de ruta", modulo: "oficinista", descripcion: "Crear y administrar hojas de ruta semanales/mensuales" },
+    { clave: "vender_boletos", nombre: "Vender boletos", modulo: "oficinista", descripcion: "Vender boletos en ventanilla" },
+    { clave: "validar_pagos", nombre: "Validar pagos", modulo: "oficinista", descripcion: "Aprobar o rechazar comprobantes de transferencia" },
+    { clave: "validar_abordaje", nombre: "Validar abordaje", modulo: "oficinista", descripcion: "Escanear QR y registrar abordaje de pasajeros" },
+    { clave: "reasignar_buses", nombre: "Reasignar buses", modulo: "oficinista", descripcion: "Sustituir buses dañados por disponibles en terminal" },
+    // Cliente
+    { clave: "buscar_rutas", nombre: "Buscar rutas", modulo: "cliente", descripcion: "Buscar destinos y frecuencias disponibles" },
+    { clave: "comprar_boletos", nombre: "Comprar boletos", modulo: "cliente", descripcion: "Comprar boletos en línea" },
+    { clave: "ver_historial", nombre: "Ver historial de compras", modulo: "cliente", descripcion: "Consultar boletos comprados" },
+    { clave: "subir_comprobante", nombre: "Subir comprobante", modulo: "cliente", descripcion: "Adjuntar comprobante de transferencia" },
+  ];
+
+  const permisos: Record<string, { id: string }> = {};
+  for (const p of permisosData) {
+    const created = await prisma.permiso.create({ data: p });
+    permisos[p.clave] = created;
+  }
+  console.log("✅ Permisos creados (16 permisos)");
+
+  // ============================================
+  // 3. ASIGNAR PERMISOS A ROLES
+  // ============================================
+  // Admin tiene TODOS los permisos
+  for (const p of Object.values(permisos)) {
+    await prisma.rolPermiso.create({
+      data: { rolId: rolAdmin.id, permisoId: p.id },
+    });
+  }
+
+  // Oficinista
+  const permisosOficinista = [
+    "habilitar_rutas", "gestionar_hoja_ruta", "vender_boletos",
+    "validar_pagos", "validar_abordaje", "reasignar_buses",
+  ];
+  for (const clave of permisosOficinista) {
+    await prisma.rolPermiso.create({
+      data: { rolId: rolOficinista.id, permisoId: permisos[clave].id },
+    });
+  }
+
+  // Cliente
+  const permisosCliente = [
+    "buscar_rutas", "comprar_boletos", "ver_historial", "subir_comprobante",
+  ];
+  for (const clave of permisosCliente) {
+    await prisma.rolPermiso.create({
+      data: { rolId: rolCliente.id, permisoId: permisos[clave].id },
+    });
+  }
+  console.log("✅ Permisos asignados a roles");
+
+  // ============================================
+  // 4. CONFIGURACIÓN DE LA APLICACIÓN
+  // ============================================
+  await prisma.configuracion.create({
+    data: {
+      nombreCooperativa: "Cooperativa de Transportes Ejemplo",
       colorPrimario: "#1E40AF",
       colorSecundario: "#F59E0B",
       emailSoporte: "soporte@cooperativa.com",
@@ -23,44 +111,44 @@ async function main() {
       direccion: "Terminal Terrestre de Ambato",
     },
   });
-  console.log("✅ Cooperativa creada");
+  console.log("✅ Configuración creada");
 
   // ============================================
-  // 2. USUARIOS DE PRUEBA
+  // 5. USUARIOS DE PRUEBA
   // ============================================
-  const admin = await prisma.usuario.create({
+  await prisma.usuario.create({
     data: {
       nombre: "Administrador General",
       email: "admin@cooperativa.com",
       passwordHash: await bcrypt.hash("Admin123!", 10),
       cedula: "1800000001",
-      rol: "ADMIN",
+      rolId: rolAdmin.id,
     },
   });
 
-  const oficinista = await prisma.usuario.create({
+  await prisma.usuario.create({
     data: {
       nombre: "María López",
       email: "oficinista@cooperativa.com",
       passwordHash: await bcrypt.hash("Ofici123!", 10),
       cedula: "1800000002",
-      rol: "OFICINISTA",
+      rolId: rolOficinista.id,
     },
   });
 
-  const cliente = await prisma.usuario.create({
+  await prisma.usuario.create({
     data: {
       nombre: "Juan Pérez",
       email: "cliente@ejemplo.com",
       passwordHash: await bcrypt.hash("Client123!", 10),
       cedula: "1800000003",
-      rol: "CLIENTE",
+      rolId: rolCliente.id,
     },
   });
   console.log("✅ Usuarios creados (admin, oficinista, cliente)");
 
   // ============================================
-  // 3. BUSES CON CATEGORÍAS Y ASIENTOS
+  // 6. BUSES CON CATEGORÍAS Y ASIENTOS
   // ============================================
   const bus1 = await prisma.bus.create({
     data: {
@@ -74,7 +162,6 @@ async function main() {
     },
   });
 
-  // Categorías para bus 1
   const catNormal = await prisma.categoriaAsiento.create({
     data: {
       busId: bus1.id,
@@ -105,14 +192,11 @@ async function main() {
     },
   });
 
-  // Generar asientos para cada categoría
+  // Asientos normales
   let asientoNumero = 1;
-
-  // Asientos normales (filas 3-9, 4 por fila + 2 extra)
   for (let fila = 3; fila <= 9; fila++) {
     const posiciones = ["VENTANA", "PASILLO", "PASILLO", "VENTANA"];
     const etiquetas = ["A", "B", "C", "D"];
-
     for (let col = 0; col < 4; col++) {
       if (asientoNumero > 30) break;
       await prisma.asiento.create({
@@ -128,12 +212,11 @@ async function main() {
     }
   }
 
-  // Asientos VIP (filas 1-2, 4 por fila)
+  // Asientos VIP
   asientoNumero = 31;
   for (let fila = 1; fila <= 2; fila++) {
     const posiciones = ["VENTANA", "PASILLO", "PASILLO", "VENTANA"];
     const etiquetas = ["A", "B", "C", "D"];
-
     for (let col = 0; col < 4; col++) {
       await prisma.asiento.create({
         data: {
@@ -148,7 +231,7 @@ async function main() {
     }
   }
 
-  // Asientos discapacidad (fila 10, 2 asientos)
+  // Asientos discapacidad
   asientoNumero = 39;
   for (let col = 0; col < 2; col++) {
     await prisma.asiento.create({
@@ -162,7 +245,6 @@ async function main() {
     });
     asientoNumero++;
   }
-
   console.log("✅ Bus 01 con 40 asientos creado");
 
   // Segundo bus
@@ -179,27 +261,16 @@ async function main() {
   });
 
   await prisma.categoriaAsiento.create({
-    data: {
-      busId: bus2.id,
-      nombre: "Normal",
-      precioBase: 4.5,
-      cantidad: 32,
-    },
+    data: { busId: bus2.id, nombre: "Normal", precioBase: 4.5, cantidad: 32 },
   });
 
   await prisma.categoriaAsiento.create({
-    data: {
-      busId: bus2.id,
-      nombre: "VIP",
-      precioBase: 7.5,
-      cantidad: 4,
-    },
+    data: { busId: bus2.id, nombre: "VIP", precioBase: 7.5, cantidad: 4 },
   });
-
   console.log("✅ Bus 02 creado");
 
   // ============================================
-  // 4. FRECUENCIAS CON PARADAS INTERMEDIAS
+  // 7. FRECUENCIAS CON PARADAS INTERMEDIAS
   // ============================================
   const freq1 = await prisma.frecuencia.create({
     data: {
@@ -223,30 +294,11 @@ async function main() {
     },
   });
 
-  // Paradas intermedias para Ambato-Guayaquil
   await prisma.paradaIntermedia.createMany({
     data: [
-      {
-        frecuenciaId: freq2.id,
-        ciudad: "Riobamba",
-        orden: 1,
-        precioTramo: 2.0,
-        tiempoEstimado: 60,
-      },
-      {
-        frecuenciaId: freq2.id,
-        ciudad: "Pallatanga",
-        orden: 2,
-        precioTramo: 3.5,
-        tiempoEstimado: 120,
-      },
-      {
-        frecuenciaId: freq2.id,
-        ciudad: "Bucay",
-        orden: 3,
-        precioTramo: 5.0,
-        tiempoEstimado: 180,
-      },
+      { frecuenciaId: freq2.id, ciudad: "Riobamba", orden: 1, precioTramo: 2.0, tiempoEstimado: 60 },
+      { frecuenciaId: freq2.id, ciudad: "Pallatanga", orden: 2, precioTramo: 3.5, tiempoEstimado: 120 },
+      { frecuenciaId: freq2.id, ciudad: "Bucay", orden: 3, precioTramo: 5.0, tiempoEstimado: 180 },
     ],
   });
 
@@ -263,24 +315,11 @@ async function main() {
 
   await prisma.paradaIntermedia.createMany({
     data: [
-      {
-        frecuenciaId: freq3.id,
-        ciudad: "Baños",
-        orden: 1,
-        precioTramo: 1.5,
-        tiempoEstimado: 45,
-      },
-      {
-        frecuenciaId: freq3.id,
-        ciudad: "Shell",
-        orden: 2,
-        precioTramo: 3.0,
-        tiempoEstimado: 90,
-      },
+      { frecuenciaId: freq3.id, ciudad: "Baños", orden: 1, precioTramo: 1.5, tiempoEstimado: 45 },
+      { frecuenciaId: freq3.id, ciudad: "Shell", orden: 2, precioTramo: 3.0, tiempoEstimado: 90 },
     ],
   });
 
-  // Frecuencia inactiva
   await prisma.frecuencia.create({
     data: {
       ciudadOrigen: "Ambato",
@@ -291,7 +330,6 @@ async function main() {
       activa: false,
     },
   });
-
   console.log("✅ Frecuencias y paradas intermedias creadas");
 
   console.log("\n🎉 Seed completado exitosamente!");
