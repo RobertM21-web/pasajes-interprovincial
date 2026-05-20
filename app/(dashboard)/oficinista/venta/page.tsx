@@ -256,6 +256,76 @@ export default function VentaOficinistaPage() {
 
         </div>
 
+        {/* COLUMNA DERECHA: Datos del Pasajero y Checkout (5 Columnas) */}
+        <div className="lg:col-span-5 space-y-6">
+          <form onSubmit={handleVender} className={`bg-white rounded-2xl border shadow-xl transition duration-300 overflow-hidden ${!asientoSeleccionado ? 'opacity-50 pointer-events-none grayscale-[50%] border-slate-200' : 'border-blue-200 shadow-blue-500/10'}`}>
+            
+            <div className="bg-slate-900 p-6 text-white">
+              <h3 className="text-sm font-bold flex items-center space-x-2 border-b border-slate-700 pb-3 mb-4">
+                <span className="bg-emerald-500 text-slate-900 h-6 w-6 rounded-full flex items-center justify-center text-xs">3</span>
+                <span>Datos y Facturación</span>
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cédula del Pasajero</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <input 
+                      type="text" 
+                      maxLength={13} 
+                      required 
+                      value={pasajeroCedula}
+                      onChange={(e) => setPasajeroCedula(e.target.value.replace(/\D/g, ""))}
+                      placeholder="1801234567"
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nombres Completos</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={pasajeroNombre}
+                    onChange={(e) => setPasajeroNombre(e.target.value)}
+                    placeholder="Ej. Juan Pérez"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipo Tarifa</label>
+                    <select 
+                      value={tipoPasajero}
+                      onChange={(e) => setTipoPasajero(e.target.value as any)}
+                      className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white"
+                    >
+                      <option value="NORMAL">Normal</option>
+                      <option value="MENOR_EDAD">Menor Edad (25%)</option>
+                      <option value="TERCERA_EDAD">3ra Edad (50%)</option>
+                      <option value="DISCAPACIDAD">Discap. (50%)</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pago en Caja</label>
+                    <select 
+                      value={metodoPago}
+                      onChange={(e) => setMetodoPago(e.target.value as any)}
+                      className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white"
+                    >
+                      <option value="EFECTIVO">Efectivo</option>
+                      <option value="TRANSFERENCIA">Transferencia</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
 
       </div>
     </div>
