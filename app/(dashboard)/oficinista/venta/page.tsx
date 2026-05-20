@@ -253,6 +253,72 @@ export default function VentaOficinistaPage() {
               ))}
             </select>
           </div>
+
+          {/* PASO 2: Mapa de Asientos Interactivo */}
+          <div className={`bg-white p-6 rounded-2xl border shadow-sm transition duration-300 ${!rutaSeleccionada ? 'opacity-50 pointer-events-none grayscale-[50%]' : 'border-slate-200'}`}>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                <span className="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">2</span>
+                <span>Distribución del Autobús</span>
+              </h3>
+              
+              {/* Leyenda Visual */}
+              <div className="flex items-center space-x-3 text-[10px] font-bold uppercase text-slate-500">
+                <span className="flex items-center"><span className="w-3 h-3 bg-blue-100 border border-blue-300 rounded mr-1"></span> Libre</span>
+                <span className="flex items-center"><span className="w-3 h-3 bg-slate-200 border border-slate-300 rounded mr-1"></span> Ocupado</span>
+                <span className="flex items-center"><span className="w-3 h-3 bg-emerald-500 border border-emerald-600 rounded mr-1"></span> Tu Selección</span>
+              </div>
+            </div>
+
+            {loadingAsientos ? (
+              <div className="py-12 flex justify-center"><div className="animate-spin h-8 w-8 border-4 border-blue-200 border-t-blue-600 rounded-full"></div></div>
+            ) : asientos.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 text-sm">Selecciona una ruta para ver los asientos.</div>
+            ) : (
+              <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 max-w-sm mx-auto relative overflow-hidden">
+                <div className="h-10 border-b-2 border-slate-300 mb-6 flex items-center justify-between px-3 text-slate-400 text-[10px] font-bold uppercase">
+                  <span>Conductor 👨‍✈️</span>
+                  <span>Puerta 🚪</span>
+                </div>
+                
+                {/* Grilla de Asientos (4 columnas) */}
+                <div className="grid grid-cols-4 gap-3 max-h-96 overflow-y-auto px-2 pb-2">
+                  {asientos.map((asiento) => {
+                    const isSelected = asientoSeleccionado?.id === asiento.id;
+                    const isOccupied = asiento.ocupado;
+
+                    return (
+                      <button
+                        key={asiento.id}
+                        disabled={isOccupied}
+                        onClick={() => setAsientoSeleccionado(asiento)}
+                        title={`${asiento.etiqueta} - ${asiento.categoria} ($${asiento.precioBase})`}
+                        className={`
+                          aspect-square rounded-xl flex flex-col items-center justify-center text-xs font-black transition-all border-b-4 relative
+                          ${isOccupied 
+                            ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed' 
+                            : isSelected 
+                            ? 'bg-emerald-500 text-white border-emerald-600 shadow-md transform -translate-y-1' 
+                            : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300'
+                          }
+                        `}
+                      >
+                        {/* Pequeño indicador de categoría */}
+                        {!isOccupied && !isSelected && asiento.categoria.includes("VIP") && (
+                          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
+                        )}
+                        <span>{asiento.etiqueta}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="absolute top-[64px] bottom-4 left-1/2 -translate-x-1/2 w-8 bg-slate-100/50 pointer-events-none flex items-center justify-center">
+                  <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.2em] rotate-90">Pasillo</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* COLUMNA DERECHA: Datos del Pasajero y Checkout (5 Columnas) */}
