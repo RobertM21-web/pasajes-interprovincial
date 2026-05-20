@@ -44,3 +44,66 @@ export async function GET() {
     );
   }
 }
+
+// PUT: Actualizar o crear la configuración
+export async function PUT(request: Request) {
+  try {
+    // TODO: Activar esta validación de sesión cuando se haga el merge de NextAuth
+    /*
+    import { getServerSession } from "next-auth";
+    import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+    
+    const session = await getServerSession(authOptions);
+    if (!session || session.user?.rol !== "ADMIN") {
+      return NextResponse.json(
+        { error: "No autorizado. Solo los administradores pueden modificar la configuración." },
+        { status: 401 }
+      );
+    }
+    */
+
+    const body = await request.json();
+
+    // Validar el body con Zod
+    const result = configuracionSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          error: "Datos de configuración inválidos", 
+          details: result.error.flatten().fieldErrors 
+        },
+        { status: 400 }
+      );
+    }
+
+    const data = result.data;
+
+    // Buscamos si ya existe una configuración
+    const existingConfig = await prisma.configuracion.findFirst();
+
+    let config;
+    if (existingConfig) {
+      // Actualizamos el registro existente
+      config = await prisma.configuracion.update({
+        where: { id: existingConfig.id },
+        data: data,
+      });
+    } else {
+      // Creamos uno nuevo
+      config = await prisma.configuracion.create({
+        data: data,
+      });
+    }
+
+    return NextResponse.json(
+      { message: "Configuración guardada exitosamente", data: config },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error al guardar la configuración:", error);
+    return NextResponse.json(
+      { error: "Ocurrió un error al guardar la configuración" },
+      { status: 500 }
+    );
+  }
+}
