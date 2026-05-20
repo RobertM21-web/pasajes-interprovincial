@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Verificar que la ruta existe
+    // Verificar que la ruta existe con el diseño de relaciones de Sandro
     const ruta = await prisma.ruta.findUnique({
       where: { id: rutaId },
       include: {
@@ -47,18 +47,18 @@ export async function GET(request: NextRequest) {
       select: { asientoId: true }
     })
 
-    const asientosOcupados = new Set(boletosVendidos.map((b: { asientoId: string }) => b.asientoId))
+    const asientosOcupados = new Set(boletosVendidos.map(b => b.asientoId))
 
-    // Construir respuesta con todos los asientos y su estado
-    const asientos = ruta.bus.categorias.flatMap((categoria: any) =>
-      categoria.asientos.map((asiento: any) => ({
+    // Construir respuesta asegurando que el precioBase se procese como número decimal correcto
+    const asientos = ruta.bus.categorias.flatMap(categoria =>
+      categoria.asientos.map(asiento => ({
         id: asiento.id,
         numero: asiento.numero,
         etiqueta: asiento.etiqueta,
         fila: asiento.fila,
         posicion: asiento.posicion,
-        categoria: categoria.nombre,
-        precioBase: categoria.precioBase,
+        categoria: categoria.nombre, // Recibe "NORMAL", "VIP", "DISCAPACIDAD", etc.
+        precioBase: Number(categoria.precioBase), // Forzado a número para que no falle .toFixed()
         ocupado: asientosOcupados.has(asiento.id)
       }))
     )
@@ -78,9 +78,10 @@ export async function GET(request: NextRequest) {
       },
       asientos
     })
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Error detallado en selector-asientos:", error) // Nos ayuda a debuggear en la terminal
     return NextResponse.json(
-      { error: 'Error al obtener asientos' },
+      { error: 'Error al obtener asientos', detalle: error.message },
       { status: 500 }
     )
   }
