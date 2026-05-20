@@ -208,6 +208,80 @@ export default function VentaOficinistaPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans relative">
       
+      {/* TICKET MODAL (Éxito y Generación de QR) */}
+      {boletoExitoso && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            {/* Header del Ticket */}
+            <div className="bg-blue-600 p-6 text-center text-white relative">
+              <div className="absolute top-4 right-4 bg-white/20 p-1.5 rounded-full cursor-pointer hover:bg-white/30" onClick={() => setBoletoExitoso(null)}>
+                <X className="h-4 w-4 text-white" />
+              </div>
+              <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-emerald-300" />
+              <h3 className="font-black text-xl tracking-widest uppercase">TRANS-ECLIPSE</h3>
+              <p className="text-blue-200 text-xs mt-1 uppercase tracking-widest">Boleto Electrónico Valido</p>
+            </div>
+            
+            {/* Cuerpo del Ticket */}
+            <div className="p-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] relative">
+              {/* Recorte simulado del ticket (estilo boleto) */}
+              <div className="absolute -left-3 top-1/2 -mt-3 w-6 h-6 bg-slate-900/60 rounded-full border-r border-white"></div>
+              <div className="absolute -right-3 top-1/2 -mt-3 w-6 h-6 bg-slate-900/60 rounded-full border-l border-white"></div>
+              
+              <div className="space-y-4">
+                <div className="text-center pb-4 border-b border-dashed border-slate-300">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Pasajero</p>
+                  <p className="font-bold text-slate-900 text-lg uppercase truncate">{boletoExitoso.pasajero}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 pb-4 border-b border-dashed border-slate-300">
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Origen</p>
+                    <p className="font-bold text-slate-900">{boletoExitoso.origen}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Destino</p>
+                    <p className="font-bold text-slate-900">{boletoExitoso.destino}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Salida</p>
+                    <p className="font-bold text-blue-600">{boletoExitoso.fecha} • {boletoExitoso.hora}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Asiento</p>
+                    <p className="font-bold text-emerald-600 text-lg">{boletoExitoso.asiento}</p>
+                  </div>
+                </div>
+
+                {/* QR Code */}
+                <div className="flex flex-col items-center justify-center pt-2">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Código de Abordaje</p>
+                  {boletoExitoso.qr ? (
+                    <img src={boletoExitoso.qr} alt="Código QR del Boleto" className="w-40 h-40 border-4 border-white shadow-sm rounded-lg" />
+                  ) : (
+                    <div className="w-40 h-40 bg-slate-100 flex items-center justify-center rounded-lg border border-slate-200">
+                      <QrCode className="h-10 w-10 text-slate-300" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer de acción */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200">
+              <button 
+                onClick={() => {
+                  window.print(); // Función nativa de impresión del navegador
+                }}
+                className="w-full flex items-center justify-center space-x-2 bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition"
+              >
+                <Printer className="h-4.5 w-4.5" />
+                <span>Imprimir Ticket</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Título de la vista */}
       <div className="flex items-center space-x-3 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm">
