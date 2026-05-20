@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       asientos
     })
   } catch (error: any) {
-    console.error("Error detallado en selector-asientos:", error) // Nos ayuda a debuggear en la terminal
+    console.error("Error detallado en selector-asientos:", error)
     return NextResponse.json(
       { error: 'Error al obtener asientos', detalle: error.message },
       { status: 500 }
