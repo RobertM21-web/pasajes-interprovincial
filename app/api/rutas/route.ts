@@ -12,6 +12,83 @@ const rutaSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const origen = searchParams.get('origen')?.trim()
+    const destino = searchParams.get('destino')?.trim()
+    const fecha = searchParams.get('fecha')
+
+    // ============================================================================
+    // CASO 1: BÚSQUEDA PÚBLICA DE RUTAS (CLIENTE - COMPRA ONLINE)
+    // Se dispara si vienen parámetros de origen y destino en la URL
+    // ============================================================================
+    if (origen !== undefined && destino !== undefined) {
+      if (!fecha) {
+        return NextResponse.json({ error: 'Falta la fecha' }, { status: 400 })
+      }
+
+      const fechaInicio = new Date(fecha);
+      fechaInicio.setUTCHours(0, 0, 0, 0);
+      const fechaFin = new Date(fecha);
+      fechaFin.setUTCHours(23, 59, 59, 999);
+
+      const rutas = await prisma.ruta.findMany({
+        where: {
+          fecha: { gte: fechaInicio, lte: fechaFin },
+          estado: 'HABILITADA', // Corregido según schema.prisma
+          frecuencia: {
+            activa: true,
+            OR: [
+              { ciudadOrigen: { contains: origen }, ciudadDestino: { contains: destino } },
+              { ciudadOrigen: { contains: origen }, paradasIntermedias: { some: { ciudad: { contains: destino } } } }
+            ]
+          }
+        },
+        include: {
+          frecuencia: { include: { paradasIntermedias: { orderBy: { orden: 'asc' } } } },
+          bus: { include: { categorias: true } }
+        }
+      })
+
+      const rutasConDisponibilidad = await Promise.all(
+        rutas.map(async (ruta) => {
+          const boletosVendidos = await prisma.boleto.count({
+            where: {
+              rutaId: ruta.id,
+              estado: { not: 'CANCELADO' } // Corregido según schema.prisma
+            }
+          })
+
+          const totalAsientos = ruta.bus.totalAsientos || 0
+          const asientosDisponibles = Math.max(0, totalAsientos - boletosVendidos)
+
+          const paradaDestino = ruta.frecuencia.paradasIntermedias.find(
+            p => p.ciudad.toLowerCase().includes(destino.toLowerCase())
+          )
+          const precio = paradaDestino 
+            ? Number(paradaDestino.precioTramo) 
+            : Number(ruta.bus.categorias?.[0]?.precioBase ?? 0)
+
+          return {
+            id: ruta.id,
+            origen: ruta.frecuencia.ciudadOrigen,
+            destino: ruta.frecuencia.ciudadDestino,
+            hora: ruta.frecuencia.hora,
+            fecha: ruta.fecha,
+            precio,
+            asientosDisponibles,
+            bus: { numero: ruta.bus.numero },
+            paradas: ruta.frecuencia.paradasIntermedias.map(p => p.ciudad)
+          }
+        })
+      )
+
+      return NextResponse.json(rutasConDisponibilidad)
+    }
+
+    // ============================================================================
+    // CASO 2: OBTENER RUTAS DEL OFICINISTA (HOJA DE RUTA)
+    // Requiere Autenticación
+    // ============================================================================
     const session = await getServerSession()
     const userEmail = session?.user?.email
     if (!session || !userEmail) {
@@ -27,12 +104,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const fecha = searchParams.get('fecha')
-
     const whereClause: any = { oficinistaId: usuario.id }
     if (fecha) {
-      // Comparar fechas usando rango de inicio y fin de día
       const startDate = new Date(fecha)
       const endDate = new Date(fecha)
       endDate.setDate(endDate.getDate() + 1)
@@ -42,7 +115,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const rutas = await prisma.ruta.findMany({
+    const rutasOficinista = await prisma.ruta.findMany({
       where: whereClause,
       include: {
         frecuencia: true,
@@ -54,7 +127,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(rutas)
+    return NextResponse.json(rutasOficinista)
+
   } catch (error) {
     console.error('Error al obtener rutas:', error)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
@@ -94,7 +168,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Hoja de ruta no encontrada' }, { status: 404 })
     }
 
-    // Calculamos el límite superior (fechaFin) lógicamente
     const dias = hojaRuta.tipo === 'SEMANAL' ? 6 : 29
     const fechaFin = new Date(hojaRuta.fechaInicio)
     fechaFin.setDate(fechaFin.getDate() + dias)
@@ -118,10 +191,7 @@ export async function POST(request: NextRequest) {
 
     // Validar concurrencia del bus en la misma fecha
     const rutaExistente = await prisma.ruta.findFirst({
-      where: {
-        busId,
-        fecha: fechaRuta
-      }
+      where: { busId, fecha: fechaRuta }
     })
 
     if (rutaExistente) {
