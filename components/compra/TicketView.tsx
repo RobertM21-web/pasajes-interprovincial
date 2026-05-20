@@ -1,43 +1,29 @@
+"use client";
+
 type TicketViewProps = {
   selectedRoute: string;
 };
 
-export default function TicketView({
-  selectedRoute,
-}: TicketViewProps) {
+export default function TicketView({ selectedRoute }: TicketViewProps) {
   return (
-    <div className="bg-white border-2 border-dashed border-amber-400 rounded-2xl p-5 shadow">
-      <h3 className="text-xl font-bold text-center text-black mb-4">
-        Boleto Generado
-      </h3>
-
-      <div className="space-y-2 text-gray-700">
-        <p>
-          <span className="font-semibold">Código:</span>{" "}
-          TICKET-2026-001
-        </p>
-
-        <p>
-          <span className="font-semibold">Ruta:</span>{" "}
-          {selectedRoute}
-        </p>
-
-        <p>
-          <span className="font-semibold">Estado:</span>{" "}
-          <span className="text-amber-600 font-bold">
-            Pendiente de validación
-          </span>
-          <div className="flex gap-3 mt-5">
-            <button className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all">
-              Ver boleto
-            </button>
-
-            <button className="flex-1 px-4 py-2 bg-gray-800 hover:bg-black text-white rounded-xl font-semibold transition-all">
-              Descargar boleto
-            </button>
-          </div>
-        </p>
+    <div className="mt-6 p-6 border-2 border-dashed border-green-500 bg-green-50 rounded-2xl animate-fade-in">
+      <h3 className="text-lg font-bold text-green-800 mb-2">¡Compra Confirmada!</h3>
+      <p className="text-sm text-green-700">Tu pasaje ha sido generado con éxito.</p>
+      
+      <div className="mt-4 bg-white p-4 rounded-xl border shadow-sm">
+        <p className="text-xs text-gray-500 uppercase font-bold">Detalle del viaje</p>
+        <p className="text-black font-semibold mt-1">{selectedRoute}</p>
+        <div className="mt-4 pt-4 border-t border-dashed">
+          <p className="text-xs text-gray-400">Código de validación: <span className="text-black font-mono">TKT-8829-X</span></p>
+        </div>
       </div>
+      
+      <button 
+        onClick={() => window.print()}
+        className="w-full mt-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
+      >
+        Descargar PDF
+      </button>
     </div>
   );
 }
