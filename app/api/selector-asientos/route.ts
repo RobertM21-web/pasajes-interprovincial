@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       )
     }
+
     // Verificar que la ruta existe con el diseño de relaciones de Sandro
     const ruta = await prisma.ruta.findUnique({
       where: { id: rutaId },
@@ -29,12 +30,14 @@ export async function GET(request: NextRequest) {
         }
       }
     })
+
     if (!ruta) {
       return NextResponse.json(
         { error: 'Ruta no encontrada' },
         { status: 404 }
       )
     }
+
     // Obtener asientos ya ocupados en esta ruta
     const boletosVendidos = await prisma.boleto.findMany({
       where: {
@@ -43,7 +46,9 @@ export async function GET(request: NextRequest) {
       },
       select: { asientoId: true }
     })
+
     const asientosOcupados = new Set(boletosVendidos.map(b => b.asientoId))
+
     // Construir respuesta asegurando que el precioBase se procese como número decimal correcto
     const asientos = ruta.bus.categorias.flatMap(categoria =>
       categoria.asientos.map(asiento => ({
@@ -57,6 +62,7 @@ export async function GET(request: NextRequest) {
         ocupado: asientosOcupados.has(asiento.id)
       }))
     )
+
     return NextResponse.json({
       ruta: {
         id: ruta.id,
