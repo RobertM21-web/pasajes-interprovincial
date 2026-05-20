@@ -253,7 +253,6 @@ export default function VentaOficinistaPage() {
               ))}
             </select>
           </div>
-
         </div>
 
         {/* COLUMNA DERECHA: Datos del Pasajero y Checkout (5 Columnas) */}
@@ -323,6 +322,50 @@ export default function VentaOficinistaPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Liquidación Final */}
+            <div className="p-6 bg-white space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500 font-medium">Asiento Seleccionado:</span>
+                <span className="font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded-md">{asientoSeleccionado?.etiqueta || "--"} ({asientoSeleccionado?.categoria || "--"})</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500 font-medium">Tarifa Base:</span>
+                <span className="font-mono">${precioBase.toFixed(2)}</span>
+              </div>
+              {porcentajeDescuento > 0 && (
+                <div className="flex items-center justify-between text-sm text-amber-600">
+                  <span className="font-medium">Descuento ({porcentajeDescuento}%):</span>
+                  <span className="font-mono">-${descuentoCalculado.toFixed(2)}</span>
+                </div>
+              )}
+              
+              <div className="pt-4 border-t border-dashed border-slate-200 flex items-center justify-between">
+                <span className="font-bold text-slate-900">Total a Pagar:</span>
+                <span className="text-3xl font-black text-emerald-600 font-mono">${precioFinal.toFixed(2)}</span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={enviandoVenta || !asientoSeleccionado}
+                className="w-full mt-4 h-12 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 focus:ring-4 focus:ring-emerald-500/20 transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-50"
+              >
+                {enviandoVenta ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Procesando...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="h-5 w-5" />
+                    <span>Cobrar y Emitir Boleto</span>
+                  </>
+                )}
+              </button>
             </div>
           </form>
         </div>
