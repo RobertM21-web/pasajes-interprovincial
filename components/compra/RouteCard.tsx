@@ -1,73 +1,64 @@
-type RouteCardProps = {
-  name: string;
-  departure: string;
-  price: string;
-  selected: boolean;
-  onSelect: () => void;
-};
+"use client";
 
-export default function RouteCard({
-  name,
-  departure,
-  price,
-  selected,
-  onSelect,
-}: RouteCardProps) {
+import { useState } from "react";
+import RouteCard from "@/components/compra/RouteCard";
+import PurchaseSummary from "@/components/compra/PurchaseSummary";
+import SearchRouteForm from "@/components/compra/SearchRouteForm";
+
+export default function CompraOnlinePage() {
+  const [routes, setRoutes] = useState<any[]>([]);
+  const [selectedRoute, setSelectedRoute] = useState<any | null>(null);
+  const [purchaseConfirmed, setPurchaseConfirmed] = useState(false);
+
+  // Temporalmente, podemos usar una ruta de prueba que respete la nueva estructura
+  const handleSearch = async (origen: string, destino: string, fecha: string) => {
+    // Simulamos la estructura que espera RouteCard
+    const mockRoute = {
+      id: "1",
+      origen: "Ambato",
+      destino: "Quito",
+      hora: "14:00",
+      fecha: "2026-05-19",
+      esDirecta: true,
+      precio: 12.50,
+      totalAsientos: 40,
+      asientosDisponibles: 20,
+      bus: { id: "bus1", numero: 101 },
+      paradas: []
+    };
+    setRoutes([mockRoute]);
+  };
+
   return (
-    <div
-      className={`
-        border rounded-xl p-4 transition-all
-        ${
-          selected
-            ? "border-amber-500 bg-amber-50 shadow-md"
-            : "hover:border-amber-400"
-        }
-      `}
-    >
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="font-semibold text-black">
-            {name}
-          </h3>
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-3xl font-bold text-black mb-8">Compra Online</h1>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl shadow p-6">
+            <h2 className="text-xl font-semibold mb-4 text-black">Buscar Ruta</h2>
+            <SearchRouteForm onSearch={handleSearch} />
 
-          <p className="text-sm text-gray-600">
-            Salida: {departure}
-          </p>
-          <div className="mt-2 text-xs text-gray-500 space-y-1">
-            <p>Bus: Ejecutivo 2026</p>
-            <p>Placa: TBA-2345</p>
-            <p>Chasis: Mercedes Benz</p>
-            <p>Carrocería: IMCE</p>
+            <div className="mt-6 space-y-4">
+              {routes.map((route) => (
+                <RouteCard
+                  key={route.id}
+                  route={route}
+                  selected={selectedRoute?.id === route.id}
+                  onSelect={() => setSelectedRoute(route)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="mt-2 text-xs text-gray-500">
-          <p className="font-medium text-gray-600">Paradas:</p>
-          <p>
-            {name.includes("Guayaquil")
-              ? "Ambato → Riobamba → Bucay → Guayaquil"
-              : "Ambato → Latacunga → Quito"}
-          </p>
-        </div>
-
-        <div className="text-right">
-          <p className="font-bold text-amber-600">
-            ${price}
-          </p>
-
-          <button
-            onClick={onSelect}
-            className={`
-              mt-2 px-4 py-2 rounded-lg text-sm text-white transition-all
-              ${
-                selected
-                  ? "bg-green-600"
-                  : "bg-amber-500 hover:bg-amber-600"
-              }
-            `}
-          >
-            {selected ? "Seleccionado" : "Seleccionar"}
-          </button>
+          <div className="bg-white rounded-2xl shadow p-6">
+            <h2 className="text-xl font-semibold mb-4 text-black">Resumen de Compra</h2>
+            <PurchaseSummary
+              selectedRouteData={selectedRoute}
+              purchaseConfirmed={purchaseConfirmed}
+              setPurchaseConfirmed={setPurchaseConfirmed}
+            />
+          </div>
         </div>
       </div>
     </div>
