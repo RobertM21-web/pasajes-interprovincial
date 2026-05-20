@@ -311,6 +311,25 @@ export default function NotificacionesClientePage() {
             })
           )}
         </div>
+        {/* Paginación / Cargar Más */}
+        {paginacion?.hasMore && (
+          <div className="p-4 border-t border-slate-100 bg-slate-50 text-center">
+            <button
+              onClick={() => cargarNotificaciones(paginacion.page + 1, true)}
+              disabled={loadingMore}
+              className="px-6 py-2 bg-white border border-slate-200 text-sm font-semibold text-slate-700 rounded-xl hover:bg-slate-50 shadow-sm transition disabled:opacity-50 inline-flex items-center space-x-2"
+            >
+              {loadingMore ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>Cargando...</span>
+                </>
+              ) : (
+                <span>Cargar notificaciones anteriores</span>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
