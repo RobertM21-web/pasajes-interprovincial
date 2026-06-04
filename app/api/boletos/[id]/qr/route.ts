@@ -5,10 +5,10 @@ import { generateBoletoQR } from '@/lib/qr'
 // GET /api/boletos/[id]/qr — generar o regenerar QR de un boleto
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     // Validamos primero la existencia para retornar los datos en la respuesta
     const boleto = await prisma.boleto.findUnique({

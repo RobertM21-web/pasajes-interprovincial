@@ -5,7 +5,11 @@ import { BoletoQR } from '@/components/boletos/BoletoQR'
 import Link from 'next/link'
 import { ArrowLeft, Download } from 'lucide-react'
 
-export default async function BoletoDetailPage({ params }: { params: { id: string } }) {
+export default async function BoletoDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const session = await getServerSession()
   const userEmail = session?.user?.email
 
@@ -13,7 +17,11 @@ export default async function BoletoDetailPage({ params }: { params: { id: strin
     redirect('/api/auth/signin')
   }
 
-  const { id } = params
+  const { id } = await params
+
+  if (!id) {
+    notFound()
+  }
 
   const usuarioActual = await prisma.usuario.findUnique({
     where: { email: userEmail },
@@ -68,6 +76,13 @@ export default async function BoletoDetailPage({ params }: { params: { id: strin
       fecha: boleto.ruta.fecha.toISOString(),
       frecuencia: boleto.ruta.frecuencia,
       bus: boleto.ruta.bus
+    },
+    asiento: {
+      ...boleto.asiento,
+      categoria: {
+        ...boleto.asiento.categoria,
+        precioBase: Number(boleto.asiento.categoria.precioBase),
+      },
     }
   }
 

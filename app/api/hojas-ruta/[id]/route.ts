@@ -4,10 +4,10 @@ import { NextResponse } from 'next/server'
 // GET /api/hojas-ruta/[id] — obtener una hoja de ruta por ID
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     const hoja = await prisma.hojaRuta.findUnique({
       where: { id },
@@ -43,10 +43,10 @@ export async function GET(
 // DELETE /api/hojas-ruta/[id] — eliminar una hoja de ruta
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     const hoja = await prisma.hojaRuta.findUnique({ where: { id } })
 

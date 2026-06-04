@@ -1,34 +1,29 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const usuarioId = searchParams.get("usuarioId");
+    const session = await getServerSession(authOptions);
 
-    if (!usuarioId) {
-      return NextResponse.json(
-        { error: "Se requiere usuarioId" },
-        { status: 400 }
-      );
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
+    const usuarioId = session.user.id;
     const estado = searchParams.get("estado");
-    const desde = searchParams.get("desde");
-    const hasta = searchParams.get("hasta");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
-    const where: any = { usuarioId };
+    const where: {
+      usuarioId: string;
+      estado?: string;
+    } = { usuarioId };
 
     if (estado) where.estado = estado.toUpperCase();
-
-    if (desde || hasta) {
-      where.createdAt = {};
-      if (desde) where.createdAt.gte = new Date(desde);
-      if (hasta) where.createdAt.lte = new Date(hasta + "T23:59:59");
-    }
 
     const [boletos, total] = await Promise.all([
       prisma.boleto.findMany({
@@ -40,6 +35,7 @@ export async function GET(request: Request) {
                 select: {
                   ciudadOrigen: true,
                   ciudadDestino: true,
+                  hora: true,
                 },
               },
               bus: {
@@ -65,40 +61,39 @@ export async function GET(request: Request) {
       prisma.boleto.count({ where }),
     ]);
 
-    const historial = boletos.map((boleto) => ({
-      id: boleto.id,
-      codigoQr: boleto.codigoQr,
-      estado: boleto.estado,
-      precioBase: Number(boleto.precioBase),
-      descuento: Number(boleto.descuento),
-      precioFinal: Number(boleto.precioFinal),
-      pasajeroNombre: boleto.pasajeroNombre,
-      pasajeroCedula: boleto.pasajeroCedula,
-      tipoPasajero: boleto.tipoPasajero,
-      metodoPago: boleto.metodoPago,
-      canalVenta: boleto.canalVenta,
-      origenTramo: boleto.origenTramo,
-      destinoTramo: boleto.destinoTramo,
-      abordado: boleto.abordado,
-      fechaAbordaje: boleto.fechaAbordaje,
-      comprobanteUrl: boleto.comprobanteUrl,
-      createdAt: boleto.createdAt,
-      ruta: {
-        origen: boleto.ruta.frecuencia.ciudadOrigen,
-        destino: boleto.ruta.frecuencia.ciudadDestino,
-        busNumero: boleto.ruta.bus.numero,
-        busPlaca: boleto.ruta.bus.placa,
-      },
-      asiento: {
-        numero: boleto.asiento.numero,
-        etiqueta: boleto.asiento.etiqueta,
-        categoria: boleto.asiento.categoria.nombre,
-        posicion: boleto.asiento.posicion,
-      },
-    }));
-
     return NextResponse.json({
-      boletos: historial,
+      boletos: boletos.map((boleto) => ({
+        id: boleto.id,
+        codigoQr: boleto.codigoQr,
+        estado: boleto.estado,
+        precioBase: Number(boleto.precioBase),
+        descuento: Number(boleto.descuento),
+        precioFinal: Number(boleto.precioFinal),
+        pasajeroNombre: boleto.pasajeroNombre,
+        pasajeroCedula: boleto.pasajeroCedula,
+        tipoPasajero: boleto.tipoPasajero,
+        metodoPago: boleto.metodoPago,
+        canalVenta: boleto.canalVenta,
+        origenTramo: boleto.origenTramo,
+        destinoTramo: boleto.destinoTramo,
+        abordado: boleto.abordado,
+        fechaAbordaje: boleto.fechaAbordaje,
+        comprobanteUrl: boleto.comprobanteUrl,
+        createdAt: boleto.createdAt,
+        ruta: {
+          origen: boleto.ruta.frecuencia.ciudadOrigen,
+          destino: boleto.ruta.frecuencia.ciudadDestino,
+          hora: boleto.ruta.frecuencia.hora,
+          busNumero: boleto.ruta.bus.numero,
+          busPlaca: boleto.ruta.bus.placa,
+        },
+        asiento: {
+          numero: boleto.asiento.numero,
+          etiqueta: boleto.asiento.etiqueta,
+          categoria: boleto.asiento.categoria.nombre,
+          posicion: boleto.asiento.posicion,
+        },
+      })),
       paginacion: {
         total,
         page,

@@ -65,7 +65,7 @@ export default function PurchaseSummary({
         </div>
 
         <Link
-          href="/cliente/selector-asientos"
+          href={`/cliente/selector-asientos?rutaId=${encodeURIComponent(selectedRouteData.id)}&tipoPasajero=${encodeURIComponent(passengerType)}&precio=${encodeURIComponent(precioFinal.toFixed(2))}`}
           className="inline-block mt-5 px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all w-full text-center"
         >
           Elegir asientos

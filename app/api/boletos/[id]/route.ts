@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth/next'
 // GET /api/boletos/[id] — obtener boleto validando auth y permisos
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -15,7 +15,7 @@ export async function GET(
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
     
     // Obtener usuario actual con su rol
     const usuarioActual = await prisma.usuario.findUnique({

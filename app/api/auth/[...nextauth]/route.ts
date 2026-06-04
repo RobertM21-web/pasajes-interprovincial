@@ -1,13 +1,10 @@
 import NextAuth from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from "@prisma/client";
-import { PrismaMssql } from "@prisma/adapter-mssql";
 import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
-const adapter = new PrismaMssql(process.env.DATABASE_URL!);
-const prisma = new PrismaClient({ adapter });
-
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -51,14 +48,14 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.rol = (user as any).rol;
+        token.rol = user.rol;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).rol = token.rol;
+        session.user.id = token.id;
+        session.user.rol = token.rol;
       }
       return session;
     },
@@ -70,6 +67,8 @@ const handler = NextAuth({
     strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

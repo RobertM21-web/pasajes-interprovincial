@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 // POST /api/boletos — crear boleto con validación de concurrencia
 export async function POST(request: NextRequest) {
@@ -8,7 +10,7 @@ export async function POST(request: NextRequest) {
     const {
       rutaId,
       asientoId,
-      usuarioId,
+      usuarioId: bodyUsuarioId,
       vendidoPorId,
       pasajeroNombre,
       pasajeroCedula,
@@ -18,6 +20,8 @@ export async function POST(request: NextRequest) {
       metodoPago,
       canalVenta
     } = body
+    const session = await getServerSession(authOptions)
+    const usuarioId = bodyUsuarioId || session?.user?.id
 
     if (!rutaId || !asientoId || !pasajeroNombre || !pasajeroCedula || !origenTramo || !destinoTramo) {
       return NextResponse.json(

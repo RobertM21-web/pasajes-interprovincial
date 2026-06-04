@@ -13,9 +13,9 @@ const updateFrecuenciaSchema = z.object({
   activa: z.boolean().optional(),
 });
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const parsed = idParamSchema.safeParse(params);
+    const parsed = idParamSchema.safeParse(await params);
     if (!parsed.success) {
       return NextResponse.json({ message: "ID inválido" }, { status: 400 });
     }
@@ -34,9 +34,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const parsedId = idParamSchema.safeParse(params);
+    const parsedId = idParamSchema.safeParse(await params);
     if (!parsedId.success) return NextResponse.json({ message: "ID inválido" }, { status: 400 });
 
     const body = await req.json();
@@ -53,16 +53,16 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     return NextResponse.json(updated);
   } catch (err: any) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: "Validación inválida", errors: err.errors }, { status: 400 });
+      return NextResponse.json({ message: "Validación inválida", errors: err.issues }, { status: 400 });
     }
     console.error("PUT /api/frecuencias/[id] error:", err);
     return NextResponse.json({ message: "Error del servidor" }, { status: 500 });
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const parsedId = idParamSchema.safeParse(params);
+    const parsedId = idParamSchema.safeParse(await params);
     if (!parsedId.success) return NextResponse.json({ message: "ID inválido" }, { status: 400 });
 
     const id = parsedId.data.id;

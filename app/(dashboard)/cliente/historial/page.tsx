@@ -17,7 +17,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { BoletoCard } from "./boleto-card";
 import { EmptyState } from "./empty-state";
 import { EstadoFilter } from "./estado-filter";
@@ -88,7 +88,6 @@ interface HistorialResponse {
  * Página principal: Historial de compras (Client Component)
  */
 export default function HistorialPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Estados
@@ -101,9 +100,6 @@ export default function HistorialPage() {
   const estado = searchParams.get("estado") || null;
   const page = parseInt(searchParams.get("page") || "1");
 
-  // TODO: Obtener usuarioId de NextAuth cuando esté configurado
-  const usuarioId = "test-user-id"; // Placeholder
-
   // Efecto: Cargar boletos cuando cambien los parámetros
   useEffect(() => {
     const cargarBoletos = async () => {
@@ -112,7 +108,6 @@ export default function HistorialPage() {
 
       try {
         const params = new URLSearchParams({
-          usuarioId,
           page: page.toString(),
         });
 
@@ -141,7 +136,7 @@ export default function HistorialPage() {
     };
 
     cargarBoletos();
-  }, [estado, page, usuarioId]);
+  }, [estado, page]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">

@@ -4,21 +4,20 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Header from "@/components/dashboard/Header";
-import type { NavItem } from "@/lib/navigation";
+import { getNavItemsByRole } from "@/lib/navigation";
 
 interface DashboardLayoutProps {
   rol: string;
-  navItems: NavItem[];
   children: React.ReactNode;
 }
 
 export default function DashboardLayout({
   rol,
-  navItems,
   children,
 }: DashboardLayoutProps) {
   const { data: session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navItems = getNavItemsByRole(rol);
 
   const userName = session?.user?.name || "Usuario";
 

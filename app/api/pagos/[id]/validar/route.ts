@@ -1,20 +1,31 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 // PATCH /api/pagos/[id]/validar — oficinista valida o rechaza un comprobante
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
-    const { aprobado, vendidoPorId } = body
+    const { aprobado } = body
+    const session = await getServerSession(authOptions)
+    const vendidoPorId = session?.user?.id
 
-    if (aprobado === undefined || !vendidoPorId) {
+    if (aprobado === undefined) {
       return NextResponse.json(
-        { error: 'aprobado y vendidoPorId son requeridos' },
+        { error: 'aprobado es requerido' },
         { status: 400 }
+      )
+    }
+
+    if (!vendidoPorId) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
       )
     }
 

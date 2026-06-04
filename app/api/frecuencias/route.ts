@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     return NextResponse.json(nueva, { status: 201 });
   } catch (err: any) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json({ message: "Validación inválida", errors: err.errors }, { status: 400 });
+      return NextResponse.json({ message: "Validación inválida", errors: err.issues }, { status: 400 });
     }
     console.error("POST /api/frecuencias error:", err);
     return NextResponse.json({ message: "Error del servidor" }, { status: 500 });

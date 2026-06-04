@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 type Seat = {
   id: string;
@@ -13,25 +14,63 @@ type Seat = {
   ocupado: boolean;
 };
 
-export default function SelectorAsientos({ rutaId }: { rutaId: string }) {
+type RutaSelector = {
+  id: string;
+  fecha: string;
+  origen: string;
+  destino: string;
+  hora: string;
+};
+
+function normalizeTipoPasajero(value?: string): string {
+  switch (value) {
+    case "Menor de edad":
+      return "MENOR_EDAD";
+    case "Tercera edad":
+      return "TERCERA_EDAD";
+    case "Discapacitado":
+      return "DISCAPACIDAD";
+    default:
+      return "NORMAL";
+  }
+}
+
+export default function SelectorAsientos({
+  rutaId,
+  tipoPasajero,
+  precioFinal,
+}: {
+  rutaId: string;
+  tipoPasajero?: string;
+  precioFinal?: string;
+}) {
+  const router = useRouter();
   const [seats, setSeats] = useState<Seat[]>([]);
+  const [ruta, setRuta] = useState<RutaSelector | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
   const [floor, setFloor] = useState<number>(1);
+  const [pasajeroNombre, setPasajeroNombre] = useState("");
+  const [pasajeroCedula, setPasajeroCedula] = useState("");
+  const [metodoPago, setMetodoPago] = useState("TRANSFERENCIA");
+  const [comprobanteUrl, setComprobanteUrl] = useState("");
 
   useEffect(() => {
     async function cargarAsientos() {
       try {
         setLoading(true);
-        const response = await fetch(`/api/selector-asientos?rutaId=${rutaId}`);
+        const response = await fetch(`/api/selector-asientos?rutaId=${encodeURIComponent(rutaId)}`);
         
         if (!response.ok) {
-          throw new Error("No se pudo obtener el mapa de asientos");
+          const data = await response.json().catch(() => null);
+          throw new Error(data?.error || data?.detalle || "No se pudo obtener el mapa de asientos");
         }
         
         const data = await response.json();
         setSeats(data.asientos || []);
+        setRuta(data.ruta || null);
       } catch (err: any) {
         setError(err.message || "Error al conectar con el servidor");
       } finally {
@@ -76,6 +115,64 @@ export default function SelectorAsientos({ rutaId }: { rutaId: string }) {
 
   const selectedSeatData = seats.find((seat) => seat.id === selectedSeat);
 
+  async function continuarCompra() {
+    if (!selectedSeatData || !ruta) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const requiereComprobante = metodoPago === "TRANSFERENCIA" || metodoPago === "DEPOSITO";
+      if (requiereComprobante && !comprobanteUrl.trim()) {
+        throw new Error("Ingresa la URL del comprobante de pago");
+      }
+
+      const response = await fetch("/api/boletos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rutaId,
+          asientoId: selectedSeatData.id,
+          pasajeroNombre: pasajeroNombre.trim(),
+          pasajeroCedula: pasajeroCedula.trim(),
+          tipoPasajero: normalizeTipoPasajero(tipoPasajero),
+          origenTramo: ruta.origen,
+          destinoTramo: ruta.destino,
+          metodoPago,
+          canalVenta: "ONLINE",
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "No se pudo crear el boleto");
+      }
+
+      if (comprobanteUrl.trim()) {
+        const pagoResponse = await fetch("/api/pagos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            boletoId: data.id,
+            comprobanteUrl: comprobanteUrl.trim(),
+            metodoPago,
+          }),
+        });
+        const pagoData = await pagoResponse.json().catch(() => null);
+        if (!pagoResponse.ok) {
+          throw new Error(pagoData?.error || "El boleto se creo, pero no se pudo subir el comprobante");
+        }
+      }
+
+      router.push(`/cliente/boletos/${data.id}`);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al continuar la compra");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="w-full max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow text-center text-gray-700 font-medium animate-pulse">
@@ -97,6 +194,12 @@ export default function SelectorAsientos({ rutaId }: { rutaId: string }) {
       <h2 className="text-2xl font-bold mb-6 text-center text-black">
         Selecciona tu asiento
       </h2>
+      {(tipoPasajero || precioFinal) && (
+        <p className="mb-5 text-center text-sm text-gray-600">
+          Tarifa: <span className="font-semibold">{tipoPasajero || "Normal"}</span>
+          {precioFinal ? <span> | Precio calculado: <strong>${Number(precioFinal).toFixed(2)}</strong></span> : null}
+        </p>
+      )}
 
       {/* Selector de Piso */}
       <div className="flex justify-center gap-4 mb-6">
@@ -220,7 +323,7 @@ export default function SelectorAsientos({ rutaId }: { rutaId: string }) {
 
       {/* Panel Informativo de Selección */}
       {selectedSeatData && (
-        <div className="mt-6 max-w-sm mx-auto text-center bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+        <div className="mt-6 max-w-sm mx-auto bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
           <p className="text-base font-medium text-gray-800">
             Asiento seleccionado:
             <span className="ml-2 text-amber-600 font-bold">{selectedSeatData.etiqueta}</span>
@@ -231,9 +334,72 @@ export default function SelectorAsientos({ rutaId }: { rutaId: string }) {
           <p className="text-xs text-gray-600 mt-0.5">
             Precio de este asiento: <span className="font-bold text-gray-900">${Number(selectedSeatData.precioBase).toFixed(2)}</span>
           </p>
-          <button className="mt-3 w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold text-sm transition-all shadow-sm">
-            Continuar compra
+          <div className="mt-4 space-y-3 text-left">
+            <label className="block text-xs font-semibold text-gray-600" htmlFor="pasajeroNombre">
+              Nombre del pasajero
+            </label>
+            <input
+              id="pasajeroNombre"
+              value={pasajeroNombre}
+              onChange={(event) => setPasajeroNombre(event.target.value)}
+              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
+              placeholder="Nombre completo"
+            />
+            <label className="block text-xs font-semibold text-gray-600" htmlFor="pasajeroCedula">
+              Cedula del pasajero
+            </label>
+            <input
+              id="pasajeroCedula"
+              value={pasajeroCedula}
+              onChange={(event) => setPasajeroCedula(event.target.value)}
+              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
+              placeholder="Cedula o identificacion"
+              maxLength={13}
+            />
+            <label className="block text-xs font-semibold text-gray-600" htmlFor="metodoPago">
+              Metodo de pago
+            </label>
+            <select
+              id="metodoPago"
+              value={metodoPago}
+              onChange={(event) => setMetodoPago(event.target.value)}
+              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
+            >
+              <option value="TRANSFERENCIA">Transferencia</option>
+              <option value="DEPOSITO">Deposito</option>
+              <option value="PAYPAL">PayPal</option>
+            </select>
+            {(metodoPago === "TRANSFERENCIA" || metodoPago === "DEPOSITO") && (
+              <>
+                <label className="block text-xs font-semibold text-gray-600" htmlFor="comprobanteUrl">
+                  URL del comprobante
+                </label>
+                <input
+                  id="comprobanteUrl"
+                  value={comprobanteUrl}
+                  onChange={(event) => setComprobanteUrl(event.target.value)}
+                  className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
+                  placeholder="https://..."
+                />
+              </>
+            )}
+          </div>
+          <button
+            type="button"
+            disabled={
+              submitting ||
+              !pasajeroNombre.trim() ||
+              !pasajeroCedula.trim() ||
+              ((metodoPago === "TRANSFERENCIA" || metodoPago === "DEPOSITO") && !comprobanteUrl.trim())
+            }
+            onClick={continuarCompra}
+            className="mt-4 w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold text-sm transition-all shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? "Procesando..." : "Continuar compra"}
           </button>
+          <p className="mt-2 text-center text-[11px] text-gray-500">
+            El oficinista revisara el comprobante antes de aprobar la compra.
+          </p>
         </div>
       )}
     </div>
