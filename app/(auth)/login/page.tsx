@@ -1,21 +1,37 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Bus, 
-  Lock, 
-  Mail, 
-  Eye, 
-  EyeOff, 
-  AlertCircle, 
-  ArrowRight
+import {
+  Bus,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import { getSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getDashboardPathForRole } from "@/lib/auth";
+import { validarCampo } from "@/lib/validaciones";
 
-// Resolución dinámica de módulos para evitar que falle el compilador estático del Canvas.
-// En tu entorno local de Next.js, estas asignaciones importarán automáticamente tus paquetes reales.
+// ─── helpers de estilo ───────────────────────────────────────
+function inputBorderClass(error: string, valid: boolean): string {
+  if (error) return "border-red-500 bg-red-50/30 focus:ring-red-500/20 focus:border-red-500";
+  if (valid) return "border-emerald-400 bg-emerald-50/20 focus:ring-emerald-500/20 focus:border-emerald-500";
+  return "border-gray-200 bg-gray-50/50 hover:bg-gray-50 focus:bg-white focus:ring-blue-500/20 focus:border-blue-500";
+}
+
+function FieldError({ msg }: { msg: string }) {
+  if (!msg) return null;
+  return (
+    <p className="flex items-center gap-1 text-[11px] font-medium text-red-600 mt-1 animate-fade-in">
+      <AlertCircle className="h-3 w-3 shrink-0" />
+      {msg}
+    </p>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -23,6 +39,23 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // ─── validación inline ───────────────────────────────────
+  const [errores, setErrores] = useState({ email: "", password: "" });
+  const [tocados, setTocados] = useState({ email: false, password: false });
+
+  const validarField = (campo: "email" | "password", valor: string) => {
+    let msg = "";
+    if (campo === "email") msg = validarCampo.email(valor);
+    if (campo === "password" && !valor.trim()) msg = "La contraseña es obligatoria";
+    setErrores((prev) => ({ ...prev, [campo]: msg }));
+  };
+
+  const marcar = (campo: "email" | "password") =>
+    setTocados((prev) => ({ ...prev, [campo]: true }));
+
+  const emailValido = tocados.email && !errores.email && email.length > 0;
+  const passwordValida = tocados.password && !errores.password && password.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +155,7 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
               >
-                Correo Electrónico
+                Correo Electrónico <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
@@ -132,24 +165,26 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    validarField("email", e.target.value);
+                  }}
+                  onBlur={() => marcar("email")}
                   placeholder="ejemplo@cooperativa.com"
-                  className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm bg-gray-50/50 hover:bg-gray-50 focus:bg-white text-gray-900 placeholder:text-gray-400"
+                  className={`w-full pl-11 pr-4 py-3 rounded-xl focus:ring-2 outline-none transition text-sm text-gray-900 placeholder:text-gray-400 border ${inputBorderClass(tocados.email ? errores.email : "", emailValido)}`}
                 />
               </div>
+              {tocados.email && <FieldError msg={errores.email} />}
             </div>
 
             {/* Input de Contraseña */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
-                >
-                  Contraseña
-                </label>
-              </div>
+              <label
+                htmlFor="password"
+                className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+              >
+                Contraseña <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                   <Lock className="h-5 w-5" />
@@ -158,10 +193,13 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    validarField("password", e.target.value);
+                  }}
+                  onBlur={() => marcar("password")}
                   placeholder="••••••••••••"
-                  className="w-full pl-11 pr-11 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition text-sm bg-gray-50/50 hover:bg-gray-50 focus:bg-white text-gray-900 placeholder:text-gray-400"
+                  className={`w-full pl-11 pr-11 py-3 rounded-xl focus:ring-2 outline-none transition text-sm text-gray-900 placeholder:text-gray-400 border ${inputBorderClass(tocados.password ? errores.password : "", passwordValida)}`}
                 />
                 <button
                   type="button"
@@ -169,13 +207,10 @@ export default function LoginPage() {
                   className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition"
                   title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              {tocados.password && <FieldError msg={errores.password} />}
             </div>
 
             {/* Botón de Submit Animado */}
