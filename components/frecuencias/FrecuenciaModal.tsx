@@ -43,6 +43,7 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -65,13 +66,89 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
         });
       }
       setErrors({});
+      setTouched({});
     }
   }, [frecuencia, isOpen]);
 
+  const validarField = (name: string, value: any) => {
+    let error = '';
+    if (name === 'ciudadOrigen' || name === 'ciudadDestino') {
+      const val = String(value).trim();
+      if (!val) {
+        error = 'Requerido';
+      } else if (val.length < 3) {
+        error = 'Mínimo 3 caracteres';
+      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(val)) {
+        error = 'Solo letras y espacios';
+      }
+    } else if (name === 'hora') {
+      if (!value) {
+        error = 'Requerido';
+      }
+    }
+    setErrors((prev) => {
+      if (error) {
+        return { ...prev, [name]: error };
+      } else {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      }
+    });
+    return error;
+  };
+
+  const validarParadaField = (index: number, field: 'ciudad' | 'precioTramo' | 'tiempoEstimado', val: any) => {
+    let error = '';
+    const key = `parada_${index}_${field === 'precioTramo' ? 'precio' : field === 'tiempoEstimado' ? 'tiempo' : 'ciudad'}`;
+    
+    if (field === 'ciudad') {
+      const c = String(val).trim();
+      if (!c) {
+        error = 'Requerido';
+      } else if (c.length < 3) {
+        error = 'Mínimo 3 caracteres';
+      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(c)) {
+        error = 'Solo letras';
+      }
+    } else if (field === 'precioTramo') {
+      if (val === '' || Number(val) <= 0) {
+        error = 'Debe ser > 0';
+      }
+    } else if (field === 'tiempoEstimado') {
+      if (val === '' || Number(val) <= 0) {
+        error = 'Debe ser > 0';
+      }
+    }
+
+    setErrors((prev) => {
+      if (error) {
+        return { ...prev, [key]: error };
+      } else {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+    });
+    return error;
+  };
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
+    const newTouched: Record<string, boolean> = {
+      ciudadOrigen: true,
+      ciudadDestino: true,
+      hora: true,
+    };
+
     if (!formData.ciudadOrigen.trim()) newErrors.ciudadOrigen = 'Requerido';
+    else if (formData.ciudadOrigen.trim().length < 3) newErrors.ciudadOrigen = 'Mínimo 3 caracteres';
+    else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(formData.ciudadOrigen.trim())) newErrors.ciudadOrigen = 'Solo letras y espacios';
+
     if (!formData.ciudadDestino.trim()) newErrors.ciudadDestino = 'Requerido';
+    else if (formData.ciudadDestino.trim().length < 3) newErrors.ciudadDestino = 'Mínimo 3 caracteres';
+    else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(formData.ciudadDestino.trim())) newErrors.ciudadDestino = 'Solo letras y espacios';
+
     if (!formData.hora) newErrors.hora = 'Requerido';
     
     if (!formData.esDirecta) {
@@ -79,30 +156,49 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
         newErrors.global = 'Debe agregar al menos una parada si el viaje no es directo.';
       }
       formData.paradas.forEach((parada, index) => {
-        if (!parada.ciudad.trim()) newErrors[`parada_${index}_ciudad`] = 'Requerido';
-        if (parada.precioTramo === '' || Number(parada.precioTramo) < 0) newErrors[`parada_${index}_precio`] = 'Inválido';
-        if (parada.tiempoEstimado === '' || Number(parada.tiempoEstimado) <= 0) newErrors[`parada_${index}_tiempo`] = 'Inválido';
+        newTouched[`parada_${index}_ciudad`] = true;
+        newTouched[`parada_${index}_precio`] = true;
+        newTouched[`parada_${index}_tiempo`] = true;
+
+        const c = parada.ciudad.trim();
+        if (!c) {
+          newErrors[`parada_${index}_ciudad`] = 'Requerido';
+        } else if (c.length < 3) {
+          newErrors[`parada_${index}_ciudad`] = 'Mínimo 3 caracteres';
+        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(c)) {
+          newErrors[`parada_${index}_ciudad`] = 'Solo letras';
+        }
+
+        if (parada.precioTramo === '' || Number(parada.precioTramo) <= 0) {
+          newErrors[`parada_${index}_precio`] = 'Debe ser > 0';
+        }
+        if (parada.tiempoEstimado === '' || Number(parada.tiempoEstimado) <= 0) {
+          newErrors[`parada_${index}_tiempo`] = 'Debe ser > 0';
+        }
       });
     }
 
     setErrors(newErrors);
+    setTouched(newTouched);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
+    const val = type === 'checkbox' ? checked : value;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: val,
     }));
     
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
+    if (type !== 'checkbox') {
+      validarField(name, val);
     }
+  };
+
+  const handleBlur = (name: string) => {
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    validarField(name, formData[name as keyof Frecuencia]);
   };
 
   const handleAddParada = () => {
@@ -118,6 +214,21 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
       newParadas.splice(index, 1);
       return { ...prev, paradas: newParadas };
     });
+    // Limpiar errores/touched de la parada eliminada
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[`parada_${index}_ciudad`];
+      delete next[`parada_${index}_precio`];
+      delete next[`parada_${index}_tiempo`];
+      return next;
+    });
+    setTouched((prev) => {
+      const next = { ...prev };
+      delete next[`parada_${index}_ciudad`];
+      delete next[`parada_${index}_precio`];
+      delete next[`parada_${index}_tiempo`];
+      return next;
+    });
   };
 
   const handleParadaChange = (index: number, field: keyof ParadaIntermedia, value: string) => {
@@ -126,6 +237,41 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
       newParadas[index] = { ...newParadas[index], [field]: value };
       return { ...prev, paradas: newParadas };
     });
+    validarParadaField(index, field as any, value);
+  };
+
+  const handleParadaBlur = (index: number, field: keyof ParadaIntermedia) => {
+    const key = `parada_${index}_${field === 'precioTramo' ? 'precio' : field === 'tiempoEstimado' ? 'tiempo' : 'ciudad'}`;
+    setTouched((prev) => ({ ...prev, [key]: true }));
+    const val = formData.paradas[index][field];
+    validarParadaField(index, field as any, val);
+  };
+
+  const getInputClass = (name: string, value: string) => {
+    const isTouched = touched[name];
+    const error = errors[name];
+    const base = "flex h-11 w-full rounded-xl border bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 dark:text-slate-100 transition-colors";
+    if (isTouched && error) {
+      return `${base} border-rose-500 bg-rose-500/5 focus:ring-rose-500 focus:border-rose-500`;
+    }
+    if (isTouched && !error && String(value).trim().length > 0) {
+      return `${base} border-emerald-500 bg-emerald-500/5 focus:ring-emerald-500 focus:border-emerald-500`;
+    }
+    return `${base} border-slate-300 dark:border-slate-700 focus:ring-indigo-500 focus:border-indigo-500`;
+  };
+
+  const getParadaInputClass = (index: number, field: 'ciudad' | 'precio' | 'tiempo', value: string | number) => {
+    const key = `parada_${index}_${field}`;
+    const isTouched = touched[key];
+    const error = errors[key];
+    const base = "w-full rounded-lg border bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors";
+    if (isTouched && error) {
+      return `${base} border-rose-500 bg-rose-500/5 focus:ring-rose-500 focus:border-rose-500`;
+    }
+    if (isTouched && !error && String(value).trim().length > 0) {
+      return `${base} border-emerald-500 bg-emerald-500/5 focus:ring-emerald-500 focus:border-emerald-500`;
+    }
+    return `${base} border-slate-300 dark:border-slate-700 focus:ring-indigo-500 focus:border-indigo-500`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -199,17 +345,16 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex justify-between">
                   Ciudad de Origen
-                  {errors.ciudadOrigen && <span className="text-xs text-rose-500">{errors.ciudadOrigen}</span>}
+                  {touched.ciudadOrigen && errors.ciudadOrigen && <span className="text-xs text-rose-500 animate-fade-in">{errors.ciudadOrigen}</span>}
                 </label>
                 <input
                   type="text"
                   name="ciudadOrigen"
                   value={formData.ciudadOrigen}
                   onChange={handleChange}
+                  onBlur={() => handleBlur('ciudadOrigen')}
                   placeholder="Ej: Quito"
-                  className={`flex h-11 w-full rounded-xl border bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-slate-100 transition-colors ${
-                    errors.ciudadOrigen ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-slate-700'
-                  }`}
+                  className={getInputClass('ciudadOrigen', formData.ciudadOrigen)}
                 />
               </div>
 
@@ -217,17 +362,16 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex justify-between">
                   Ciudad de Destino
-                  {errors.ciudadDestino && <span className="text-xs text-rose-500">{errors.ciudadDestino}</span>}
+                  {touched.ciudadDestino && errors.ciudadDestino && <span className="text-xs text-rose-500 animate-fade-in">{errors.ciudadDestino}</span>}
                 </label>
                 <input
                   type="text"
                   name="ciudadDestino"
                   value={formData.ciudadDestino}
                   onChange={handleChange}
+                  onBlur={() => handleBlur('ciudadDestino')}
                   placeholder="Ej: Guayaquil"
-                  className={`flex h-11 w-full rounded-xl border bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-slate-100 transition-colors ${
-                    errors.ciudadDestino ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-slate-700'
-                  }`}
+                  className={getInputClass('ciudadDestino', formData.ciudadDestino)}
                 />
               </div>
 
@@ -235,16 +379,15 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex justify-between">
                   Hora de Salida
-                  {errors.hora && <span className="text-xs text-rose-500">{errors.hora}</span>}
+                  {touched.hora && errors.hora && <span className="text-xs text-rose-500 animate-fade-in">{errors.hora}</span>}
                 </label>
                 <input
                   type="time"
                   name="hora"
                   value={formData.hora}
                   onChange={handleChange}
-                  className={`flex h-11 w-full rounded-xl border bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-slate-100 [color-scheme:light] dark:[color-scheme:dark] transition-colors ${
-                    errors.hora ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 dark:border-slate-700'
-                  }`}
+                  onBlur={() => handleBlur('hora')}
+                  className={getInputClass('hora', formData.hora)}
                 />
               </div>
 
@@ -336,11 +479,13 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
                             type="text"
                             value={parada.ciudad}
                             onChange={(e) => handleParadaChange(index, 'ciudad', e.target.value)}
+                            onBlur={() => handleParadaBlur(index, 'ciudad')}
                             placeholder="Ej: Ambato"
-                            className={`w-full rounded-lg border bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                              errors[`parada_${index}_ciudad`] ? 'border-rose-500' : 'border-slate-300 dark:border-slate-700'
-                            }`}
+                            className={getParadaInputClass(index, 'ciudad', parada.ciudad)}
                           />
+                          {touched[`parada_${index}_ciudad`] && errors[`parada_${index}_ciudad`] && (
+                            <span className="text-[10px] text-rose-500 block mt-0.5 animate-fade-in">{errors[`parada_${index}_ciudad`]}</span>
+                          )}
                         </div>
                         {/* Precio */}
                         <div className="col-span-6 sm:col-span-3 space-y-1.5">
@@ -351,11 +496,13 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
                             min="0"
                             value={parada.precioTramo}
                             onChange={(e) => handleParadaChange(index, 'precioTramo', e.target.value)}
+                            onBlur={() => handleParadaBlur(index, 'precioTramo')}
                             placeholder="0.00"
-                            className={`w-full rounded-lg border bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                              errors[`parada_${index}_precio`] ? 'border-rose-500' : 'border-slate-300 dark:border-slate-700'
-                            }`}
+                            className={getParadaInputClass(index, 'precio', parada.precioTramo)}
                           />
+                          {touched[`parada_${index}_precio`] && errors[`parada_${index}_precio`] && (
+                            <span className="text-[10px] text-rose-500 block mt-0.5 animate-fade-in">{errors[`parada_${index}_precio`]}</span>
+                          )}
                         </div>
                         {/* Tiempo Estimado */}
                         <div className="col-span-6 sm:col-span-3 space-y-1.5">
@@ -365,11 +512,13 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
                             min="1"
                             value={parada.tiempoEstimado}
                             onChange={(e) => handleParadaChange(index, 'tiempoEstimado', e.target.value)}
+                            onBlur={() => handleParadaBlur(index, 'tiempoEstimado')}
                             placeholder="60"
-                            className={`w-full rounded-lg border bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                              errors[`parada_${index}_tiempo`] ? 'border-rose-500' : 'border-slate-300 dark:border-slate-700'
-                            }`}
+                            className={getParadaInputClass(index, 'tiempo', parada.tiempoEstimado)}
                           />
+                          {touched[`parada_${index}_tiempo`] && errors[`parada_${index}_tiempo`] && (
+                            <span className="text-[10px] text-rose-500 block mt-0.5 animate-fade-in">{errors[`parada_${index}_tiempo`]}</span>
+                          )}
                         </div>
                         {/* Eliminar Parada */}
                         <div className="col-span-12 sm:col-span-2 flex sm:justify-end items-end h-[62px]">
