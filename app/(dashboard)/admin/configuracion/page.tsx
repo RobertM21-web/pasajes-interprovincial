@@ -15,6 +15,11 @@ const configuracionSchema = z.object({
   emailSoporte: z.string().email("Correo inválido").optional().or(z.literal("")),
   telefonoSoporte: z.string().max(20, "Muy largo").optional().or(z.literal("")),
   direccion: z.string().max(255, "Muy larga").optional().or(z.literal("")),
+
+  nombreBanco: z.string().max(120, "Máximo 120 caracteres").optional().or(z.literal("")),
+  numeroCuenta: z.string().max(50, "Máximo 50 caracteres").optional().or(z.literal("")),
+  titularCuenta: z.string().max(150, "Máximo 150 caracteres").optional().or(z.literal("")),
+  rucCooperativa: z.string().max(20, "Máximo 20 caracteres").optional().or(z.literal("")),
 });
 
 type ConfigForm = z.infer<typeof configuracionSchema>;
@@ -65,6 +70,19 @@ const Icon = {
   Loader: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
       <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>
+  ),
+
+    Bank: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 10L12 4l9 6" />
+      <path d="M4 10h16" />
+      <path d="M6 10v8" />
+      <path d="M10 10v8" />
+      <path d="M14 10v8" />
+      <path d="M18 10v8" />
+      <path d="M3 18h18" />
+      <path d="M2 22h20" />
     </svg>
   ),
 };
@@ -146,9 +164,21 @@ function Toast({ type, message, onClose }: { type: "success" | "error"; message:
 }
 
 const EMPTY: ConfigForm = {
-  nombreCooperativa: "", logoUrl: "", colorPrimario: "", colorSecundario: "",
-  facebook: "", instagram: "", twitter: "", whatsapp: "",
-  emailSoporte: "", telefonoSoporte: "", direccion: "",
+  nombreCooperativa: "",
+  logoUrl: "",
+  colorPrimario: "",
+  colorSecundario: "",
+  facebook: "",
+  instagram: "",
+  twitter: "",
+  whatsapp: "",
+  emailSoporte: "",
+  telefonoSoporte: "",
+  direccion: "",
+  nombreBanco: "",
+  numeroCuenta: "",
+  titularCuenta: "",
+  rucCooperativa: "",
 };
 
 export default function ConfigCooperativaPage() {
@@ -176,6 +206,10 @@ export default function ConfigCooperativaPage() {
             emailSoporte: json.data.emailSoporte ?? "",
             telefonoSoporte: json.data.telefonoSoporte ?? "",
             direccion: json.data.direccion ?? "",
+            nombreBanco: json.data.nombreBanco ?? "",
+            numeroCuenta: json.data.numeroCuenta ?? "",
+            titularCuenta: json.data.titularCuenta ?? "",
+            rucCooperativa: json.data.rucCooperativa ?? "",
           });
         }
       } catch {
@@ -331,6 +365,55 @@ export default function ConfigCooperativaPage() {
               </Field>
               <Field label="Teléfono de soporte" error={errors.telefonoSoporte}>
                 <input type="tel" value={form.telefonoSoporte} onChange={set("telefonoSoporte")} placeholder="032 123 4567" style={inputStyle(!!errors.telefonoSoporte)} maxLength={20} />
+              </Field>
+            </div>
+          </SectionCard>
+
+                    {/* Sección 5: Datos bancarios */}
+          <SectionCard title="Datos bancarios para pagos" icon={<Icon.Bank />}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <Field label="Nombre del banco" error={errors.nombreBanco}>
+                <input
+                  type="text"
+                  value={form.nombreBanco}
+                  onChange={set("nombreBanco")}
+                  placeholder="Ej: Banco Pichincha"
+                  style={inputStyle(!!errors.nombreBanco)}
+                  maxLength={120}
+                />
+              </Field>
+
+              <Field label="Número de cuenta" error={errors.numeroCuenta}>
+                <input
+                  type="text"
+                  value={form.numeroCuenta}
+                  onChange={set("numeroCuenta")}
+                  placeholder="Ej: 2200456789"
+                  style={inputStyle(!!errors.numeroCuenta)}
+                  maxLength={50}
+                />
+              </Field>
+
+              <Field label="Titular de la cuenta" error={errors.titularCuenta}>
+                <input
+                  type="text"
+                  value={form.titularCuenta}
+                  onChange={set("titularCuenta")}
+                  placeholder="Ej: Cooperativa Amazonas"
+                  style={inputStyle(!!errors.titularCuenta)}
+                  maxLength={150}
+                />
+              </Field>
+
+              <Field label="RUC de la cooperativa" error={errors.rucCooperativa}>
+                <input
+                  type="text"
+                  value={form.rucCooperativa}
+                  onChange={set("rucCooperativa")}
+                  placeholder="Ej: 1890123456001"
+                  style={inputStyle(!!errors.rucCooperativa)}
+                  maxLength={20}
+                />
               </Field>
             </div>
           </SectionCard>
