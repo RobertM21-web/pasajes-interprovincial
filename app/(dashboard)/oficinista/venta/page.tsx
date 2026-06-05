@@ -61,6 +61,8 @@ export default function VentaOficinistaPage() {
   // 3. Estados del Pasajero y Formulario
   const [pasajeroNombre, setPasajeroNombre] = useState("");
   const [pasajeroCedula, setPasajeroCedula] = useState("");
+  const [emailEnvio, setEmailEnvio] = useState("");
+  const [emailEnvioEditado, setEmailEnvioEditado] = useState(false);
   const [tipoPasajero, setTipoPasajero] = useState<"NORMAL" | "MENOR_EDAD" | "TERCERA_EDAD" | "DISCAPACIDAD">("NORMAL");
   const [metodoPago, setMetodoPago] = useState<"TRANSFERENCIA" | "EFECTIVO">("EFECTIVO");
   
@@ -75,8 +77,10 @@ export default function VentaOficinistaPage() {
     fetch("/api/auth/session")
       .then(res => res.json())
       .then(data => {
-        if (data && data.user) setSession(data);
-        else setSession({ user: { id: "oficinista-dev-123" } });
+        if (data && data.user) {
+          setSession(data);
+          if (!emailEnvioEditado && data.user.email) setEmailEnvio(data.user.email);
+        } else setSession({ user: { id: "oficinista-dev-123" } });
       })
       .catch(() => setSession({ user: { id: "oficinista-dev-123" } }));
 
@@ -152,6 +156,11 @@ export default function VentaOficinistaPage() {
       return;
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEnvio.trim())) {
+      setError("Ingresa un email valido para enviar los boletos.");
+      return;
+    }
+
     setEnviandoVenta(true);
 
     try {
@@ -165,7 +174,8 @@ export default function VentaOficinistaPage() {
         tipoPasajero,
         origenTramo: rutaInfo.origen,
         destinoTramo: rutaInfo.destino,
-        metodoPago
+        metodoPago,
+        emailEnvio: emailEnvio.trim().toLowerCase()
       };
 
       const resVenta = await fetch("/api/ventas", {
@@ -187,6 +197,27 @@ export default function VentaOficinistaPage() {
         setBoletoExitoso({ ...dataVenta, qr: null });
       } else {
         setBoletoExitoso(dataQr); // dataQr trae { pasajero, asiento, qr (base64), etc }
+      }
+
+      const resEmail = await fetch("/api/email/enviar-boletos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          boletoIds: [boletoId],
+          emailDestino: emailEnvio.trim().toLowerCase(),
+        }),
+      });
+      const dataEmail = await resEmail.json().catch(() => null);
+      if (!resEmail.ok) {
+        setBoletoExitoso((prev: any) => ({
+          ...(prev || dataQr || dataVenta),
+          emailError: dataEmail?.error || "No se pudo enviar el boleto por correo.",
+        }));
+      } else {
+        setBoletoExitoso((prev: any) => ({
+          ...(prev || dataQr || dataVenta),
+          emailMessage: dataEmail?.message || `Boletos enviados a ${emailEnvio.trim().toLowerCase()}. Revisa tu bandeja de entrada.`,
+        }));
       }
 
       // 3. Bloquear el asiento recién vendido en la UI
@@ -264,6 +295,16 @@ export default function VentaOficinistaPage() {
                     </div>
                   )}
                 </div>
+                {boletoExitoso.emailMessage && (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
+                    {boletoExitoso.emailMessage}
+                  </div>
+                )}
+                {boletoExitoso.emailError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
+                    {boletoExitoso.emailError}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -430,6 +471,21 @@ export default function VentaOficinistaPage() {
                     value={pasajeroNombre}
                     onChange={(e) => setPasajeroNombre(e.target.value)}
                     placeholder="Ej. Juan Pérez"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email donde recibiras tus boletos</label>
+                  <input
+                    type="email"
+                    required
+                    value={emailEnvio}
+                    onChange={(e) => {
+                      setEmailEnvioEditado(true);
+                      setEmailEnvio(e.target.value);
+                    }}
+                    placeholder="correo@ejemplo.com"
                     className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white"
                   />
                 </div>

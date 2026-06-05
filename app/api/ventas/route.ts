@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
       tipoPasajero,
       origenTramo,
       destinoTramo,
-      metodoPago
+      metodoPago,
+      emailEnvio
     } = body
 
     // Validar campos requeridos
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
         canalVenta: 'OFICINA',
         origenTramo,
         destinoTramo,
+        emailEnvio: emailEnvio?.trim()?.toLowerCase() || null,
         estado: 'PAGADO'
       },
       include: {
