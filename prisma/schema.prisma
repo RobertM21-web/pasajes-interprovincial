@@ -81,6 +81,7 @@ model Usuario {
   hojasRuta         HojaRuta[]
   rutasHabilitadas  Ruta[]
   notificaciones    Notificacion[]
+  reportesChofer ChoferReporte[] 
 
   @@map("usuarios")
 }
@@ -236,6 +237,7 @@ model Ruta {
   oficinista Usuario    @relation(fields: [oficinistaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hojaRuta   HojaRuta?  @relation(fields: [hojaRutaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   boletos    Boleto[]
+  reportesChofer ChoferReporte[]
 
   @@unique([busId, fecha, frecuenciaId])
   @@map("rutas")
@@ -296,4 +298,18 @@ model Notificacion {
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("notificaciones")
+}
+
+model ChoferReporte {
+  id          String   @id @default(uuid())
+  rutaId      String   @map("ruta_id")
+  choferId    String   @map("chofer_id")
+  tipo        String   @db.NVarChar(30) // RETRASO, DANO, EMERGENCIA, CLIMA, TRAFICO, OTRO
+  descripcion String   @db.NVarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  ruta   Ruta    @relation(fields: [rutaId], references: [id])
+  chofer Usuario @relation(fields: [choferId], references: [id])
+
+  @@map("chofer_reportes")
 }

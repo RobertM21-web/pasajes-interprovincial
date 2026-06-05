@@ -32,7 +32,13 @@ async function main() {
       descripcion: "Usuario final. Compra boletos en línea.",
     },
   });
-  console.log("✅ Roles creados (ADMIN, OFICINISTA, CLIENTE)");
+    const rolChofer = await prisma.rol.create({
+    data: {
+      nombre: "CHOFER",
+      descripcion: "Conductor del bus. Consulta rutas, pasajeros y reporta novedades.",
+    },
+  });
+ console.log("✅ Roles creados (ADMIN, OFICINISTA, CLIENTE, CHOFER)");
 
   // ============================================
   // 2. PERMISOS
@@ -57,6 +63,13 @@ async function main() {
     { clave: "comprar_boletos", nombre: "Comprar boletos", modulo: "cliente", descripcion: "Comprar boletos en línea" },
     { clave: "ver_historial", nombre: "Ver historial de compras", modulo: "cliente", descripcion: "Consultar boletos comprados" },
     { clave: "subir_comprobante", nombre: "Subir comprobante", modulo: "cliente", descripcion: "Adjuntar comprobante de transferencia" },
+    
+        // Chofer
+    { clave: "ver_mis_rutas", nombre: "Ver mis rutas", modulo: "chofer", descripcion: "Consultar rutas asignadas al chofer" },
+    { clave: "ver_pasajeros", nombre: "Ver pasajeros", modulo: "chofer", descripcion: "Ver lista de pasajeros por ruta" },
+    { clave: "registrar_abordaje", nombre: "Registrar abordaje", modulo: "chofer", descripcion: "Marcar pasajeros que abordan o no" },
+    { clave: "reportar_novedades", nombre: "Reportar novedades", modulo: "chofer", descripcion: "Reportar retrasos, daños o emergencias" },
+    { clave: "ver_perfil_bus", nombre: "Ver perfil del bus", modulo: "chofer", descripcion: "Consultar datos del bus asignado" },
   ];
 
   const permisos: Record<string, { id: string }> = {};
@@ -64,7 +77,7 @@ async function main() {
     const created = await prisma.permiso.create({ data: p });
     permisos[p.clave] = created;
   }
-  console.log("✅ Permisos creados (16 permisos)");
+  console.log("✅ Permisos creados (21 permisos)");
 
   // ============================================
   // 3. ASIGNAR PERMISOS A ROLES
@@ -94,6 +107,16 @@ async function main() {
   for (const clave of permisosCliente) {
     await prisma.rolPermiso.create({
       data: { rolId: rolCliente.id, permisoId: permisos[clave].id },
+    });
+  }
+    // Chofer
+  const permisosChofer = [
+    "ver_mis_rutas", "ver_pasajeros", "registrar_abordaje",
+    "reportar_novedades", "ver_perfil_bus",
+  ];
+  for (const clave of permisosChofer) {
+    await prisma.rolPermiso.create({
+      data: { rolId: rolChofer.id, permisoId: permisos[clave].id },
     });
   }
   console.log("✅ Permisos asignados a roles");
@@ -145,7 +168,16 @@ async function main() {
       rolId: rolCliente.id,
     },
   });
-  console.log("✅ Usuarios creados (admin, oficinista, cliente)");
+    await prisma.usuario.create({
+    data: {
+      nombre: "Juanito Chofer",
+      email: "chofer@cooperativa.com",
+      passwordHash: await bcrypt.hash("Chofer123!", 10),
+      cedula: "1800000004",
+      rolId: rolChofer.id,
+    },
+  });
+ console.log("✅ Usuarios creados (admin, oficinista, cliente, chofer)");
 
   // ============================================
   // 6. BUSES CON CATEGORÍAS Y ASIENTOS
@@ -337,6 +369,7 @@ async function main() {
   console.log("   Admin:      admin@cooperativa.com / Admin123!");
   console.log("   Oficinista: oficinista@cooperativa.com / Ofici123!");
   console.log("   Cliente:    cliente@ejemplo.com / Client123!");
+  console.log("   Chofer:     chofer@cooperativa.com / Chofer123!");
 }
 
 main()
