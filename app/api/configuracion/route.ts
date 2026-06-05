@@ -17,6 +17,10 @@ export const configuracionSchema = z.object({
   emailSoporte: z.string().email("Debe ser un correo electrónico válido").optional().or(z.literal("")),
   telefonoSoporte: z.string().max(20, "El teléfono es muy largo").optional().or(z.literal("")),
   direccion: z.string().max(255, "La dirección es muy larga").optional().or(z.literal("")),
+  nombreBanco: z.string().max(100, "El nombre del banco es muy largo").optional().or(z.literal("")),
+  numeroCuenta: z.string().max(50, "El número de cuenta es muy largo").optional().or(z.literal("")),
+  titularCuenta: z.string().max(150, "El titular de la cuenta es muy largo").optional().or(z.literal("")),
+  rucCooperativa: z.string().max(13, "El RUC es muy largo").optional().or(z.literal("")),
 });
 
 // GET: Obtener la configuración actual

@@ -32,6 +32,8 @@ export default function ValidarPagosPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [rechazandoId, setRechazandoId] = useState<string | null>(null);
+  const [motivoRechazo, setMotivoRechazo] = useState("");
 
   async function loadPagos() {
     setLoading(true);
@@ -53,6 +55,11 @@ export default function ValidarPagosPage() {
   }, []);
 
   async function validarPago(boletoId: string, aprobado: boolean) {
+    if (!aprobado && !motivoRechazo.trim()) {
+      setError("Debes escribir el motivo de rechazo.");
+      return;
+    }
+
     setSavingId(boletoId);
     setError("");
     setMessage("");
@@ -61,11 +68,16 @@ export default function ValidarPagosPage() {
       const res = await fetch(`/api/pagos/${boletoId}/validar`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aprobado }),
+        body: JSON.stringify({
+          aprobado,
+          ...((!aprobado) && { motivoRechazo: motivoRechazo.trim() }),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "No se pudo validar el pago");
       setMessage(aprobado ? "Pago aprobado correctamente." : "Pago rechazado y boleto cancelado.");
+      setRechazandoId(null);
+      setMotivoRechazo("");
       await loadPagos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");
@@ -83,8 +95,16 @@ export default function ValidarPagosPage() {
         <p className="text-sm text-gray-600">Aprueba o rechaza comprobantes pendientes.</p>
       </div>
 
-      {message && <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</div>}
-      {error && <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+      {message && (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
+      {error && (
+        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <div className="grid gap-4">
         {boletos.map((boleto) => (
@@ -93,46 +113,86 @@ export default function ValidarPagosPage() {
               <div className="space-y-2">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">{boleto.pasajeroNombre}</h2>
-                  <p className="text-sm text-gray-500">Cedula: {boleto.pasajeroCedula}</p>
+                  <p className="text-sm text-gray-500">Cédula: {boleto.pasajeroCedula}</p>
                 </div>
                 <p className="text-sm text-gray-700">
-                  {boleto.origenTramo} {"->"} {boleto.destinoTramo} | {new Date(boleto.ruta.fecha).toLocaleDateString()} {boleto.ruta.frecuencia.hora}
+                  {boleto.origenTramo} {"→"} {boleto.destinoTramo} |{" "}
+                  {new Date(boleto.ruta.fecha).toLocaleDateString()} {boleto.ruta.frecuencia.hora}
                 </p>
                 <p className="text-sm text-gray-700">
-                  Asiento {boleto.asiento.etiqueta} ({boleto.asiento.categoria.nombre}) | ${Number(boleto.precioFinal).toFixed(2)}
+                  Asiento {boleto.asiento.etiqueta} ({boleto.asiento.categoria.nombre}) | $
+                  {Number(boleto.precioFinal).toFixed(2)}
                 </p>
                 <p className="text-xs text-gray-500">
-                  Metodo: {boleto.metodoPago} | Cliente: {boleto.usuario?.email || "venta sin usuario"}
+                  Método: {boleto.metodoPago} | Cliente: {boleto.usuario?.email || "venta sin usuario"}
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {boleto.comprobanteUrl && (
-                  <a
-                    href={boleto.comprobanteUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              <div className="flex flex-col gap-2 lg:items-end">
+                <div className="flex flex-wrap gap-2">
+                  {boleto.comprobanteUrl && (
+                    <a
+                      href={boleto.comprobanteUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Ver comprobante
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    disabled={savingId === boleto.id}
+                    onClick={() => validarPago(boleto.id, true)}
+                    className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
                   >
-                    Ver comprobante
-                  </a>
+                    Aprobar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={savingId === boleto.id}
+                    onClick={() => {
+                      setRechazandoId(rechazandoId === boleto.id ? null : boleto.id);
+                      setMotivoRechazo("");
+                      setError("");
+                    }}
+                    className="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                  >
+                    Rechazar
+                  </button>
+                </div>
+
+                {rechazandoId === boleto.id && (
+                  <div className="flex flex-col gap-2 w-full lg:w-72">
+                    <textarea
+                      value={motivoRechazo}
+                      onChange={(e) => setMotivoRechazo(e.target.value)}
+                      placeholder="Escribe el motivo del rechazo..."
+                      rows={3}
+                      className="w-full rounded-md border border-red-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={savingId === boleto.id}
+                        onClick={() => validarPago(boleto.id, false)}
+                        className="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {savingId === boleto.id ? "Procesando..." : "Confirmar rechazo"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRechazandoId(null);
+                          setMotivoRechazo("");
+                        }}
+                        className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
                 )}
-                <button
-                  type="button"
-                  disabled={savingId === boleto.id}
-                  onClick={() => validarPago(boleto.id, true)}
-                  className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  Aprobar
-                </button>
-                <button
-                  type="button"
-                  disabled={savingId === boleto.id}
-                  onClick={() => validarPago(boleto.id, false)}
-                  className="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-                >
-                  Rechazar
-                </button>
               </div>
             </div>
           </article>
