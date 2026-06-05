@@ -15,6 +15,7 @@ import {
   Printer,
   X
 } from "lucide-react";
+import { validarCampo } from "@/lib/validaciones";
 
 // Interfaces basadas en la API de Sandro
 interface AsientoMap {
@@ -68,6 +69,50 @@ export default function VentaOficinistaPage() {
   const [enviandoVenta, setEnviandoVenta] = useState(false);
   const [error, setError] = useState("");
   const [boletoExitoso, setBoletoExitoso] = useState<any>(null);
+
+  // Estados de validación de venta
+  const [errorsVenta, setErrorsVenta] = useState<Record<string, string>>({});
+  const [tocadosVenta, setTocadosVenta] = useState<Record<string, boolean>>({});
+
+  const validarVentaField = (campo: string, valor: string) => {
+    let msg = "";
+    if (campo === "cedula") {
+      msg = validarCampo.cedula(valor);
+    } else if (campo === "nombre") {
+      msg = validarCampo.nombre(valor);
+    }
+    setErrorsVenta((prev) => ({ ...prev, [campo]: msg }));
+    return msg;
+  };
+
+  const marcarVenta = (campo: string) => {
+    setTocadosVenta((prev) => ({ ...prev, [campo]: true }));
+  };
+
+  const getDarkInputClass = (campo: string, valor: string, hasIcon = false, isMonospace = false) => {
+    const errorMsg = errorsVenta[campo];
+    const isTouched = tocadosVenta[campo];
+    const base = `w-full pr-3 py-2.5 bg-slate-800 border rounded-xl text-sm outline-none transition text-white ${hasIcon ? 'pl-9' : 'px-3'} ${isMonospace ? 'font-mono' : ''}`;
+    if (isTouched && errorMsg) {
+      return `${base} border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500/20 bg-red-950/20`;
+    }
+    if (isTouched && !errorMsg && valor.trim().length > 0) {
+      return `${base} border-emerald-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 bg-emerald-950/10`;
+    }
+    return `${base} border-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20`;
+  };
+
+  function VentaFieldError({ msg }: { msg: string }) {
+    if (!msg) return null;
+    return (
+      <p className="flex items-center gap-1 text-[11px] font-medium text-red-400 mt-1 animate-fade-in">
+        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+        {msg}
+      </p>
+    );
+  }
+
+  const hayErroresVenta = Object.values(errorsVenta).some((e) => e !== "");
 
   // Inicialización: Cargar Sesión y Rutas Activas
   useEffect(() => {
@@ -147,8 +192,13 @@ export default function VentaOficinistaPage() {
       return;
     }
 
-    if (pasajeroCedula.length < 10) {
-      setError("La cédula debe tener al menos 10 dígitos.");
+    const errCedula = validarVentaField("cedula", pasajeroCedula);
+    const errNombre = validarVentaField("nombre", pasajeroNombre);
+    
+    setTocadosVenta({ cedula: true, nombre: true });
+    
+    if (errCedula || errNombre) {
+      setError("Por favor corrige los errores del formulario.");
       return;
     }
 
@@ -197,6 +247,8 @@ export default function VentaOficinistaPage() {
       setPasajeroCedula("");
       setAsientoSeleccionado(null);
       setTipoPasajero("NORMAL");
+      setErrorsVenta({});
+      setTocadosVenta({});
 
     } catch (err: any) {
       setError(err.message || "Error al procesar el pago y boleto.");
@@ -412,14 +464,20 @@ export default function VentaOficinistaPage() {
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                     <input 
                       type="text" 
-                      maxLength={13} 
+                      maxLength={10} 
                       required 
                       value={pasajeroCedula}
-                      onChange={(e) => setPasajeroCedula(e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        setPasajeroCedula(val);
+                        validarVentaField("cedula", val);
+                      }}
+                      onBlur={() => marcarVenta("cedula")}
                       placeholder="1801234567"
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white font-mono"
+                      className={getDarkInputClass("cedula", pasajeroCedula, true, true)}
                     />
                   </div>
+                  <VentaFieldError msg={tocadosVenta.cedula ? errorsVenta.cedula : ""} />
                 </div>
 
                 <div className="space-y-1.5">
@@ -428,10 +486,16 @@ export default function VentaOficinistaPage() {
                     type="text" 
                     required 
                     value={pasajeroNombre}
-                    onChange={(e) => setPasajeroNombre(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPasajeroNombre(val);
+                      validarVentaField("nombre", val);
+                    }}
+                    onBlur={() => marcarVenta("nombre")}
                     placeholder="Ej. Juan Pérez"
-                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white"
+                    className={getDarkInputClass("nombre", pasajeroNombre, false, false)}
                   />
+                  <VentaFieldError msg={tocadosVenta.nombre ? errorsVenta.nombre : ""} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -488,8 +552,8 @@ export default function VentaOficinistaPage() {
 
               <button
                 type="submit"
-                disabled={enviandoVenta || !asientoSeleccionado}
-                className="w-full mt-4 h-12 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 focus:ring-4 focus:ring-emerald-500/20 transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-50"
+                disabled={enviandoVenta || !asientoSeleccionado || hayErroresVenta}
+                className="w-full mt-4 h-12 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 focus:ring-4 focus:ring-emerald-500/20 transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {enviandoVenta ? (
                   <>
