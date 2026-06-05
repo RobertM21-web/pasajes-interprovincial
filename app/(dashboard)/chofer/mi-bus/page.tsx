@@ -1,133 +1,158 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bus, User, MapPin, Check, Circle } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { Bus, AlertTriangle, Check, Circle, Wrench, Gauge, Thermometer, Droplets } from "lucide-react";
 
 export default function MiBus() {
-  const [bus, setBus] = useState<any>(null);
+  const { data: session } = useSession();
+  const router = useRouter();
+  const choferId = (session?.user as any)?.id;
+  const [perfil, setPerfil] = useState<any>(null);
+  const [estadoBus, setEstadoBus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [reportando, setReportando] = useState(false);
+  const [falla, setFalla] = useState("");
 
   useEffect(() => {
-    const choferId = "ID_DEL_CHOFER";
-    fetch(`/api/chofer/rutas?choferId=${choferId}`)
+    if (!choferId) return;
+
+    // Cargar perfil con bus asignado
+    fetch("/api/admin/usuarios")
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          // Tomar el bus de la primera ruta activa
-          const rutaActiva = data.find((r: any) => r.estado === "HABILITADA" || r.estado === "EN_CURSO");
-          if (rutaActiva) {
-            setBus(rutaActiva.bus);
-          } else {
-            setBus(data[0].bus);
-          }
+        const usuario = data.usuarios?.find((u: any) => u.id === choferId);
+        setPerfil(usuario || null);
+        
+        // Si tiene bus, cargar estado
+        if (usuario?.busAsignado?.id) {
+          fetch(`/api/buses/${usuario.busAsignado.id}/estado`)
+            .then((res) => res.json())
+            .then((data) => setEstadoBus(data))
+            .catch(() => {});
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [choferId]);
+
+  const reportarFalla = async () => {
+    if (!falla.trim() || !perfil?.busAsignado) return;
+    await fetch("/api/chofer/reportes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        choferId,
+        rutaId: null,
+        tipo: "DANO",
+        descripcion: `[Reporte de bus] ${falla}`,
+      }),
+    });
+    setFalla("");
+    setReportando(false);
+  };
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <Bus size={64} className="mx-auto text-gray-300 animate-pulse" />
-          <p className="text-gray-500 mt-4">Cargando información del bus...</p>
-        </div>
+      <div className="p-6 text-center">
+        <Bus size={64} className="mx-auto text-gray-300 animate-pulse" />
+        <p className="text-gray-500 mt-4">Cargando información del bus...</p>
       </div>
     );
   }
 
-  if (!bus) {
+  if (!perfil?.busAsignado) {
     return (
-      <div className="p-6">
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <Bus size={64} className="mx-auto text-gray-300" />
-          <p className="text-gray-500 mt-4 text-lg">No tienes un bus asignado actualmente.</p>
-          <p className="text-gray-400 text-sm mt-2">Contacta al administrador si esto es un error.</p>
-        </div>
+      <div className="p-6 text-center">
+        <Bus size={64} className="mx-auto text-gray-300" />
+        <p className="text-gray-500 mt-4 text-lg">No tienes un bus asignado actualmente.</p>
       </div>
     );
   }
+
+  const bus = perfil.busAsignado;
+  const estado = estadoBus || { llantas: 80, aceite: 75, motor: "OK" };
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">🚍 Mi Bus</h1>
 
-      {/* Tarjeta principal */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Foto del bus */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-700 h-48 flex items-center justify-center">
-          <Bus size={100} className="text-white opacity-50" />
+      {/* Tarjeta del bus */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 h-40 flex items-center justify-center">
+          <Bus size={80} className="text-white opacity-30" />
         </div>
-
-        {/* Datos del bus */}
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Información General</h2>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-500 w-24">Número:</span>
-                  <span className="font-bold text-lg">Bus {bus.numero}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-500 w-24">Placa:</span>
-                  <span className="font-bold text-lg">{bus.placa}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-500 w-24">Capacidad:</span>
-                  <span className="font-bold text-lg">{bus.totalAsientos} asientos</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-500 w-24">Estado:</span>
-                  <span className="flex items-center gap-2 text-green-600 font-bold">
-                    <Check size={18} /> Operativo
-                  </span>
-                </div>
-              </div>
+          <h2 className="text-2xl font-bold">Bus {bus.numero} - {bus.placa}</h2>
+          <p className="text-gray-500 mt-1">Capacidad: {bus.totalAsientos} asientos</p>
+          <span className="inline-flex items-center gap-1 mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+            <Check size={14} /> Operativo
+          </span>
+        </div>
+      </div>
+
+      {/* Estado del vehículo */}
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <Gauge size={22} /> Estado del Vehículo
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Llantas */}
+          <div className="bg-gray-50 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium flex items-center gap-1"><Circle size={14} className="text-gray-500" /> Llantas</span>
+              <span className={`text-sm font-bold ${estado.llantas > 50 ? "text-green-600" : estado.llantas > 25 ? "text-amber-600" : "text-red-600"}`}>{estado.llantas}%</span>
             </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div className={`h-3 rounded-full ${estado.llantas > 50 ? "bg-green-500" : estado.llantas > 25 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${estado.llantas}%` }}></div>
+            </div>
+          </div>
 
-            {/* Distribución de asientos simulada */}
-            <div>
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Distribución</h2>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-2">
-                  <Circle size={16} className="text-green-500 fill-green-500" />
-                  <span className="text-sm">Normal</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Circle size={16} className="text-amber-500 fill-amber-500" />
-                  <span className="text-sm">VIP</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Circle size={16} className="text-blue-500 fill-blue-500" />
-                  <span className="text-sm">Discapacidad</span>
-                </div>
-              </div>
+          {/* Aceite */}
+          <div className="bg-gray-50 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium flex items-center gap-1"><Droplets size={14} className="text-gray-500" /> Aceite</span>
+              <span className={`text-sm font-bold ${estado.aceite > 50 ? "text-green-600" : estado.aceite > 25 ? "text-amber-600" : "text-red-600"}`}>{estado.aceite}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div className={`h-3 rounded-full ${estado.aceite > 50 ? "bg-green-500" : estado.aceite > 25 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${estado.aceite}%` }}></div>
+            </div>
+          </div>
 
-              {/* Mini visualización de asientos */}
-              <div className="mt-4 bg-gray-100 rounded-lg p-4">
-                <div className="grid grid-cols-4 gap-1 max-w-[200px]">
-                  {Array.from({ length: Math.min(bus.totalAsientos, 40) }).map((_, i) => {
-                    const colores = ["bg-green-400", "bg-green-400", "bg-amber-400", "bg-amber-400", "bg-blue-400"];
-                    const color = i < 30 ? colores[0] : i < 38 ? colores[2] : colores[4];
-                    return (
-                      <div
-                        key={i}
-                        className={`${color} rounded w-8 h-8 flex items-center justify-center text-xs text-white font-bold`}
-                      >
-                        {i + 1}
-                      </div>
-                    );
-                  })}
-                </div>
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Vista referencial de {bus.totalAsientos} asientos
-                </p>
-              </div>
+          {/* Motor */}
+          <div className="bg-gray-50 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium flex items-center gap-1"><Wrench size={14} className="text-gray-500" /> Motor</span>
+              <span className={`text-sm font-bold ${estado.motor === "OK" ? "text-green-600" : "text-red-600"}`}>{estado.motor}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div className={`h-3 rounded-full ${estado.motor === "OK" ? "bg-green-500" : "bg-red-500"}`} style={{ width: estado.motor === "OK" ? "100%" : "30%" }}></div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Reportar falla */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <AlertTriangle size={22} className="text-amber-500" /> Reportar Falla
+        </h2>
+        {!reportando ? (
+          <button onClick={() => setReportando(true)}
+            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+            ⚠️ Reportar un problema del bus
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <textarea value={falla} onChange={(e) => setFalla(e.target.value)}
+              className="w-full border rounded-lg p-3 h-24 resize-none" placeholder="Describe la falla o problema del bus..." />
+            <div className="flex gap-2">
+              <button onClick={reportarFalla} className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Enviar reporte</button>
+              <button onClick={() => { setReportando(false); setFalla(""); }} className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400">Cancelar</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
