@@ -121,7 +121,7 @@ export default function ValidarPagosPage() {
                   type="button"
                   disabled={savingId === boleto.id}
                   onClick={() => validarPago(boleto.id, true)}
-                  className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                  className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                 >
                   Aprobar
                 </button>

@@ -20,7 +20,7 @@ export default function RouteCard({ route, selected, onSelect }: RouteCardProps)
     <div
       className={`
         border rounded-xl p-4 transition-all
-        ${selected ? "border-amber-500 bg-amber-50 shadow-md" : "border-gray-200 hover:border-amber-400"}
+        ${selected ? "border-blue-500 bg-blue-50 shadow-md" : "border-gray-200 hover:border-blue-400"}
         ${estaAgotado ? "opacity-75 bg-gray-50" : ""}
       `}
     >
@@ -43,7 +43,7 @@ export default function RouteCard({ route, selected, onSelect }: RouteCardProps)
         </div>
 
         <div className="text-right flex flex-col items-end">
-          <p className="font-bold text-amber-600 text-lg">
+          <p className="font-bold text-blue-600 text-lg">
             ${typeof route.precio === 'number' ? route.precio.toFixed(2) : parseFloat(route.precio || 0).toFixed(2)}
           </p>
 
@@ -54,7 +54,7 @@ export default function RouteCard({ route, selected, onSelect }: RouteCardProps)
               mt-3 px-4 py-2 rounded-lg text-sm text-white transition-all font-medium
               ${estaAgotado 
                 ? "bg-gray-400 cursor-not-allowed" 
-                : (selected ? "bg-green-600" : "bg-amber-500 hover:bg-amber-600")}
+                : (selected ? "bg-green-600" : "bg-blue-600 hover:bg-blue-700")}
             `}
           >
             {estaAgotado ? "No disponible" : (selected ? "Seleccionado" : "Seleccionar")}

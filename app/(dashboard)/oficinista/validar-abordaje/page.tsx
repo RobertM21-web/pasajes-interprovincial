@@ -101,7 +101,7 @@ export default function ValidarAbordajePage() {
             type="button"
             disabled={loading || !codigo.trim()}
             onClick={registrarAbordaje}
-            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
             Registrar abordaje
           </button>

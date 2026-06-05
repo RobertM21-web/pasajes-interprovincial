@@ -131,7 +131,7 @@ export function BoletoCard({ boleto }: BoletoCardProps) {
             className={`
               w-full inline-flex items-center justify-center
               px-4 py-2.5 rounded-lg font-medium text-sm
-              bg-amber-600 text-white hover:bg-amber-700
+              bg-blue-600 text-white hover:bg-blue-700
               transition-colors duration-200
             `}
           >

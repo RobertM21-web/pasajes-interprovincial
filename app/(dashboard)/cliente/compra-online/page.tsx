@@ -39,7 +39,7 @@ export default function CompraOnlinePage() {
         <h1 className="text-3xl font-bold text-black mb-8">Compra Online</h1>
         
         <div className="flex items-center gap-3 mb-8">
-            <div className="px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold">Paso 1: Seleccionar ruta</div>
+            <div className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">Paso 1: Seleccionar ruta</div>
             <div className="w-10 h-1 bg-gray-300 rounded" />
             <div className="px-4 py-2 bg-gray-200 text-gray-600 rounded-full text-sm font-semibold">Paso 2: Asientos</div>
             <div className="w-10 h-1 bg-gray-300 rounded" />

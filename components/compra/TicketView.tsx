@@ -6,7 +6,7 @@ export default function TicketView({ selectedRouteData }: TicketViewProps) {
   if (!selectedRouteData) return null;
 
   return (
-    <div className="bg-white border-2 border-dashed border-amber-400 rounded-2xl p-6 shadow-xl mt-6 relative overflow-hidden">
+    <div className="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-6 shadow-xl mt-6 relative overflow-hidden">
       {/* Círculos decorativos para estilo de boleto físico */}
       <div className="absolute -left-3 top-1/2 w-6 h-6 bg-gray-100 rounded-full"></div>
       <div className="absolute -right-3 top-1/2 w-6 h-6 bg-gray-100 rounded-full"></div>
@@ -42,7 +42,7 @@ export default function TicketView({ selectedRouteData }: TicketViewProps) {
       <div className="flex gap-3 mt-6">
         <button 
           onClick={() => window.print()} // Funcionalidad real de impresión
-          className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all"
+          className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all"
         >
           Imprimir / Guardar
         </button>

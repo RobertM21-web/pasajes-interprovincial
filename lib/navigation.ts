@@ -78,38 +78,11 @@ export function getRolColor(rol: string): {
   accentHover: string;
   badge: string;
 } {
-  switch (rol) {
-    case "ADMIN":
-      return {
-        bg: "bg-[#0F172A]",
-        text: "text-white",
-        accent: "bg-blue-600",
-        accentHover: "hover:bg-blue-500",
-        badge: "bg-blue-500/20 text-blue-300",
-      };
-    case "OFICINISTA":
-      return {
-        bg: "bg-emerald-900",
-        text: "text-white",
-        accent: "bg-emerald-600",
-        accentHover: "hover:bg-emerald-500",
-        badge: "bg-emerald-500/20 text-emerald-300",
-      };
-    case "CLIENTE":
-      return {
-        bg: "bg-amber-900",
-        text: "text-white",
-        accent: "bg-amber-600",
-        accentHover: "hover:bg-amber-500",
-        badge: "bg-amber-500/20 text-amber-300",
-      };
-    default:
-      return {
-        bg: "bg-gray-900",
-        text: "text-white",
-        accent: "bg-gray-600",
-        accentHover: "hover:bg-gray-500",
-        badge: "bg-gray-500/20 text-gray-300",
-      };
-  }
+  return {
+    bg: "bg-slate-800",
+    text: "text-white",
+    accent: "bg-blue-600",
+    accentHover: "hover:bg-blue-700",
+    badge: "bg-blue-50 text-blue-700",
+  };
 }

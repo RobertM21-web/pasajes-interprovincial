@@ -206,7 +206,7 @@ export default function SelectorAsientos({
         <button
           onClick={() => cambiarPiso(1)}
           className={`px-4 py-2 rounded-xl font-semibold transition-all ${
-            floor === 1 ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            floor === 1 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
         >
           Piso 1
@@ -214,7 +214,7 @@ export default function SelectorAsientos({
         <button
           onClick={() => cambiarPiso(2)}
           className={`px-4 py-2 rounded-xl font-semibold transition-all ${
-            floor === 2 ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            floor === 2 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
         >
           Piso 2
@@ -248,12 +248,12 @@ export default function SelectorAsientos({
               const isVip = nombreCat.includes("vip");
               const isDiscapacidad = nombreCat.includes("discapacidad") || nombreCat.includes("conci");
 
-              let seatStyle = "bg-blue-50 text-blue-800 border border-blue-200 hover:bg-amber-50";
+              let seatStyle = "bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100";
 
               if (seat.ocupado) {
                 seatStyle = "bg-red-200 text-red-700 cursor-not-allowed";
               } else if (isSelected) {
-                seatStyle = "bg-amber-500 text-white scale-105";
+                seatStyle = "bg-blue-600 text-white scale-105 border border-blue-700 shadow-md";
               } else if (isVip) {
                 seatStyle = "bg-purple-100 text-purple-800 border border-purple-300 hover:bg-purple-200";
               } else if (isDiscapacidad) {
@@ -312,7 +312,7 @@ export default function SelectorAsientos({
           Discapacidad
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-amber-500" />
+          <div className="w-3.5 h-3.5 rounded bg-blue-600" />
           Seleccionado
         </div>
         <div className="flex items-center gap-1.5">
@@ -323,10 +323,10 @@ export default function SelectorAsientos({
 
       {/* Panel Informativo de Selección */}
       {selectedSeatData && (
-        <div className="mt-6 max-w-sm mx-auto bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+        <div className="mt-6 max-w-sm mx-auto bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
           <p className="text-base font-medium text-gray-800">
             Asiento seleccionado:
-            <span className="ml-2 text-amber-600 font-bold">{selectedSeatData.etiqueta}</span>
+            <span className="ml-2 text-blue-600 font-bold">{selectedSeatData.etiqueta}</span>
           </p>
           <p className="text-xs text-gray-600 mt-0.5">
             Categoría: <span className="font-semibold uppercase text-purple-700">{selectedSeatData.categoria}</span>
@@ -342,7 +342,7 @@ export default function SelectorAsientos({
               id="pasajeroNombre"
               value={pasajeroNombre}
               onChange={(event) => setPasajeroNombre(event.target.value)}
-              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               placeholder="Nombre completo"
             />
             <label className="block text-xs font-semibold text-gray-600" htmlFor="pasajeroCedula">
@@ -352,7 +352,7 @@ export default function SelectorAsientos({
               id="pasajeroCedula"
               value={pasajeroCedula}
               onChange={(event) => setPasajeroCedula(event.target.value)}
-              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               placeholder="Cedula o identificacion"
               maxLength={13}
             />
@@ -363,7 +363,7 @@ export default function SelectorAsientos({
               id="metodoPago"
               value={metodoPago}
               onChange={(event) => setMetodoPago(event.target.value)}
-              className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             >
               <option value="TRANSFERENCIA">Transferencia</option>
               <option value="DEPOSITO">Deposito</option>
@@ -378,7 +378,7 @@ export default function SelectorAsientos({
                   id="comprobanteUrl"
                   value={comprobanteUrl}
                   onChange={(event) => setComprobanteUrl(event.target.value)}
-                  className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
+                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   placeholder="https://..."
                 />
               </>
@@ -393,7 +393,7 @@ export default function SelectorAsientos({
               ((metodoPago === "TRANSFERENCIA" || metodoPago === "DEPOSITO") && !comprobanteUrl.trim())
             }
             onClick={continuarCompra}
-            className="mt-4 w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold text-sm transition-all shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-4 w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-500/10 focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Procesando..." : "Continuar compra"}
           </button>

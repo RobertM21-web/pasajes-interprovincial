@@ -285,7 +285,7 @@ export default function VentaOficinistaPage() {
 
       {/* Título de la vista */}
       <div className="flex items-center space-x-3 bg-white p-5 border border-slate-200 rounded-2xl shadow-sm">
-        <div className="bg-emerald-600 p-2.5 rounded-xl text-white">
+        <div className="bg-blue-600 p-2.5 rounded-xl text-white">
           <Ticket className="h-6 w-6" />
         </div>
         <div>
@@ -340,7 +340,7 @@ export default function VentaOficinistaPage() {
               <div className="flex items-center space-x-3 text-[10px] font-bold uppercase text-slate-500">
                 <span className="flex items-center"><span className="w-3 h-3 bg-blue-100 border border-blue-300 rounded mr-1"></span> Libre</span>
                 <span className="flex items-center"><span className="w-3 h-3 bg-slate-200 border border-slate-300 rounded mr-1"></span> Ocupado</span>
-                <span className="flex items-center"><span className="w-3 h-3 bg-emerald-500 border border-emerald-600 rounded mr-1"></span> Tu Selección</span>
+                <span className="flex items-center"><span className="w-3 h-3 bg-blue-600 border border-blue-700 rounded mr-1"></span> Tu Selección</span>
               </div>
             </div>
 
@@ -372,7 +372,7 @@ export default function VentaOficinistaPage() {
                           ${isOccupied 
                             ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed' 
                             : isSelected 
-                            ? 'bg-emerald-500 text-white border-emerald-600 shadow-md transform -translate-y-1' 
+                            ? 'bg-blue-600 text-white border-blue-700 shadow-md transform -translate-y-1' 
                             : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300'
                           }
                         `}
@@ -399,17 +399,17 @@ export default function VentaOficinistaPage() {
         <div className="lg:col-span-5 space-y-6">
           <form onSubmit={handleVender} className={`bg-white rounded-2xl border shadow-xl transition duration-300 overflow-hidden ${!asientoSeleccionado ? 'opacity-50 pointer-events-none grayscale-[50%] border-slate-200' : 'border-blue-200 shadow-blue-500/10'}`}>
             
-            <div className="bg-slate-900 p-6 text-white">
-              <h3 className="text-sm font-bold flex items-center space-x-2 border-b border-slate-700 pb-3 mb-4">
-                <span className="bg-emerald-500 text-slate-900 h-6 w-6 rounded-full flex items-center justify-center text-xs">3</span>
+            <div className="bg-gray-50/50 p-6">
+              <h3 className="text-sm font-bold flex items-center space-x-2 border-b border-gray-200 pb-3 mb-4 text-gray-900">
+                <span className="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">3</span>
                 <span>Datos y Facturación</span>
               </h3>
               
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cédula del Pasajero</label>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cédula del Pasajero</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input 
                       type="text" 
                       maxLength={13} 
@@ -417,30 +417,30 @@ export default function VentaOficinistaPage() {
                       value={pasajeroCedula}
                       onChange={(e) => setPasajeroCedula(e.target.value.replace(/\D/g, ""))}
                       placeholder="1801234567"
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white font-mono"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 font-mono placeholder:text-gray-400 hover:bg-gray-50"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nombres Completos</label>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Nombres Completos</label>
                   <input 
                     type="text" 
                     required 
                     value={pasajeroNombre}
                     onChange={(e) => setPasajeroNombre(e.target.value)}
                     placeholder="Ej. Juan Pérez"
-                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white"
+                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 placeholder:text-gray-400 hover:bg-gray-50"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipo Tarifa</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tipo Tarifa</label>
                     <select 
                       value={tipoPasajero}
                       onChange={(e) => setTipoPasajero(e.target.value as any)}
-                      className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white"
+                      className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 hover:bg-gray-50"
                     >
                       <option value="NORMAL">Normal</option>
                       <option value="MENOR_EDAD">Menor Edad (25%)</option>
@@ -450,11 +450,11 @@ export default function VentaOficinistaPage() {
                   </div>
                   
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pago en Caja</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Pago en Caja</label>
                     <select 
                       value={metodoPago}
                       onChange={(e) => setMetodoPago(e.target.value as any)}
-                      className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 text-white"
+                      className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 hover:bg-gray-50"
                     >
                       <option value="EFECTIVO">Efectivo</option>
                       <option value="TRANSFERENCIA">Transferencia</option>
@@ -483,13 +483,13 @@ export default function VentaOficinistaPage() {
               
               <div className="pt-4 border-t border-dashed border-slate-200 flex items-center justify-between">
                 <span className="font-bold text-slate-900">Total a Pagar:</span>
-                <span className="text-3xl font-black text-emerald-600 font-mono">${precioFinal.toFixed(2)}</span>
+                <span className="text-3xl font-black text-blue-600 font-mono">${precioFinal.toFixed(2)}</span>
               </div>
 
               <button
                 type="submit"
                 disabled={enviandoVenta || !asientoSeleccionado}
-                className="w-full mt-4 h-12 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 focus:ring-4 focus:ring-emerald-500/20 transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-50"
+                className="w-full mt-4 h-12 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/10 hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/20 transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-50"
               >
                 {enviandoVenta ? (
                   <>
