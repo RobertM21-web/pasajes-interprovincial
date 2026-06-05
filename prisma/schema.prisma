@@ -260,6 +260,7 @@ model Boleto {
   codigoQr         String? @map("codigo_qr") @db.NVarChar(500)
   estado           String  @default("PENDIENTE") @db.NVarChar(20) // PENDIENTE, PAGADO, ABORDADO, CANCELADO, NO_ABORDADO
   comprobanteUrl   String? @map("comprobante_url") @db.NVarChar(500)
+  motivoRechazo    String?  @map("motivo_rechazo") @db.NVarChar(500)
   metodoPago       String  @default("TRANSFERENCIA") @map("metodo_pago") @db.NVarChar(20) // TRANSFERENCIA, DEPOSITO, PAYPAL
   canalVenta       String  @map("canal_venta") @db.NVarChar(10) // ONLINE, OFICINA
   origenTramo      String  @map("origen_tramo") @db.NVarChar(100)
