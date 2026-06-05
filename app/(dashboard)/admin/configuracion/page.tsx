@@ -96,20 +96,20 @@ function Field({ label, error, children, hint }: { label: string; error?: string
   );
 }
 
-const inputStyle = (hasError?: boolean): React.CSSProperties => ({
+const inputStyle = (hasError?: boolean, isValid?: boolean): React.CSSProperties => ({
   width: "100%",
   padding: "10px 14px",
   fontSize: "14px",
-  border: `1.5px solid ${hasError ? "#fca5a5" : "#d1d5db"}`,
+  border: `1.5px solid ${hasError ? "#ef4444" : isValid ? "#10b981" : "#d1d5db"}`,
   borderRadius: "12px",
   outline: "none",
-  background: hasError ? "#fff5f5" : "white",
+  background: hasError ? "#fef2f2" : isValid ? "#f0fdf4" : "white",
   color: "#111827",
   boxSizing: "border-box",
-  transition: "border-color .15s, box-shadow .15s",
+  transition: "border-color .15s, box-shadow .15s, background-color .15s",
 });
 
-function ColorField({ label, value, onChange, error }: { label: string; value: string; onChange: (v: string) => void; error?: string }) {
+function ColorField({ label, value, onChange, onBlur, error, isValid }: { label: string; value: string; onChange: (v: string) => void; onBlur: () => void; error?: string; isValid?: boolean }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
     <Field label={label} error={error} hint="Ej: #1D4ED8">
@@ -118,8 +118,8 @@ function ColorField({ label, value, onChange, error }: { label: string; value: s
           onClick={() => ref.current?.click()}
           style={{ width: "40px", height: "40px", borderRadius: "10px", border: "1.5px solid #d1d5db", background: /^#[0-9A-Fa-f]{6}$/.test(value) ? value : "#e5e7eb", cursor: "pointer", flexShrink: 0 }}
         />
-        <input ref={ref} type="color" value={/^#[0-9A-Fa-f]{6}$/.test(value) ? value : "#ffffff"} onChange={(e) => onChange(e.target.value)} style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 0, height: 0 }} />
-        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder="#000000" style={inputStyle(!!error)} maxLength={7} />
+        <input ref={ref} type="color" value={/^#[0-9A-Fa-f]{6}$/.test(value) ? value : "#ffffff"} onChange={(e) => { onChange(e.target.value); onBlur(); }} style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 0, height: 0 }} />
+        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} placeholder="#000000" style={inputStyle(!!error, isValid)} maxLength={7} />
       </div>
     </Field>
   );
@@ -154,6 +154,7 @@ const EMPTY: ConfigForm = {
 export default function ConfigCooperativaPage() {
   const [form, setForm] = useState<ConfigForm>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof ConfigForm, string>>>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof ConfigForm, boolean>>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -187,14 +188,48 @@ export default function ConfigCooperativaPage() {
     fetchConfig();
   }, []);
 
+  const validateField = (field: keyof ConfigForm, value: string) => {
+    const fieldSchema = configuracionSchema.shape[field];
+    const partialSchema = z.object({ [field]: fieldSchema });
+    const result = partialSchema.safeParse({ [field]: value });
+    let errorMsg = "";
+    if (!result.success) {
+      errorMsg = result.error.flatten().fieldErrors[field]?.[0] ?? "";
+    }
+    setErrors((prev) => ({ ...prev, [field]: errorMsg || undefined }));
+    return errorMsg;
+  };
+
+  const handleBlur = (field: keyof ConfigForm) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    validateField(field, form[field] ?? "");
+  };
+
+  const getStyleForField = (field: keyof ConfigForm) => {
+    const isTouched = touched[field];
+    const hasError = !!errors[field];
+    const val = String(form[field] ?? "").trim();
+    const isValid = isTouched && !hasError && val.length > 0;
+    return inputStyle(hasError, isValid);
+  };
+
   const set = (field: keyof ConfigForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    const val = e.target.value;
+    setForm((prev) => ({ ...prev, [field]: val }));
+    if (touched[field]) {
+      validateField(field, val);
+    } else {
+      if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
 
   const setColor = (field: keyof ConfigForm) => (v: string) => {
     setForm((prev) => ({ ...prev, [field]: v }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    if (touched[field]) {
+      validateField(field, v);
+    } else {
+      if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -203,9 +238,14 @@ export default function ConfigCooperativaPage() {
     const result = configuracionSchema.safeParse(form);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof ConfigForm, string>> = {};
+      const newTouched: Partial<Record<keyof ConfigForm, boolean>> = {};
       for (const [key, msgs] of Object.entries(result.error.flatten().fieldErrors)) {
         fieldErrors[key as keyof ConfigForm] = (msgs as string[])[0];
       }
+      Object.keys(form).forEach((key) => {
+        newTouched[key as keyof ConfigForm] = true;
+      });
+      setTouched(newTouched);
       setErrors(fieldErrors);
       return;
     }
@@ -268,10 +308,10 @@ export default function ConfigCooperativaPage() {
           {/* Sección 1: Información general */}
           <SectionCard title="Información general" icon={<Icon.Building />}>
             <Field label="Nombre de la cooperativa *" error={errors.nombreCooperativa}>
-              <input type="text" value={form.nombreCooperativa} onChange={set("nombreCooperativa")} placeholder="Ej: Cooperativa Amazonas" style={inputStyle(!!errors.nombreCooperativa)} maxLength={150} />
+              <input type="text" value={form.nombreCooperativa} onChange={set("nombreCooperativa")} onBlur={() => handleBlur("nombreCooperativa")} placeholder="Ej: Cooperativa Amazonas" style={getStyleForField("nombreCooperativa")} maxLength={150} />
             </Field>
             <Field label="URL del logo" error={errors.logoUrl} hint="Enlace público a la imagen del logo (https://...)">
-              <input type="url" value={form.logoUrl} onChange={set("logoUrl")} placeholder="https://ejemplo.com/logo.png" style={inputStyle(!!errors.logoUrl)} />
+              <input type="url" value={form.logoUrl} onChange={set("logoUrl")} onBlur={() => handleBlur("logoUrl")} placeholder="https://ejemplo.com/logo.png" style={getStyleForField("logoUrl")} />
             </Field>
             {form.logoUrl && /^https?:\/\/.+/.test(form.logoUrl) && (
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -282,15 +322,15 @@ export default function ConfigCooperativaPage() {
               </div>
             )}
             <Field label="Dirección" error={errors.direccion}>
-              <textarea value={form.direccion} onChange={set("direccion")} placeholder="Ej: Av. Principal 123, Ambato, Ecuador" rows={2} maxLength={255} style={{ ...inputStyle(!!errors.direccion), resize: "vertical" }} />
+              <textarea value={form.direccion} onChange={set("direccion")} onBlur={() => handleBlur("direccion")} placeholder="Ej: Av. Principal 123, Ambato, Ecuador" rows={2} maxLength={255} style={{ ...getStyleForField("direccion"), resize: "vertical" }} />
             </Field>
           </SectionCard>
 
           {/* Sección 2: Identidad visual */}
           <SectionCard title="Identidad visual" icon={<Icon.Palette />}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <ColorField label="Color primario" value={form.colorPrimario ?? ""} onChange={setColor("colorPrimario")} error={errors.colorPrimario} />
-              <ColorField label="Color secundario" value={form.colorSecundario ?? ""} onChange={setColor("colorSecundario")} error={errors.colorSecundario} />
+              <ColorField label="Color primario" value={form.colorPrimario ?? ""} onChange={setColor("colorPrimario")} onBlur={() => handleBlur("colorPrimario")} error={errors.colorPrimario} isValid={touched.colorPrimario && !errors.colorPrimario && (form.colorPrimario ?? "").trim().length > 0} />
+              <ColorField label="Color secundario" value={form.colorSecundario ?? ""} onChange={setColor("colorSecundario")} onBlur={() => handleBlur("colorSecundario")} error={errors.colorSecundario} isValid={touched.colorSecundario && !errors.colorSecundario && (form.colorSecundario ?? "").trim().length > 0} />
             </div>
             {(form.colorPrimario || form.colorSecundario) && (
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -309,16 +349,16 @@ export default function ConfigCooperativaPage() {
           <SectionCard title="Redes sociales" icon={<Icon.Share />}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <Field label="Facebook" error={errors.facebook}>
-                <input type="url" value={form.facebook} onChange={set("facebook")} placeholder="https://facebook.com/..." style={inputStyle(!!errors.facebook)} />
+                <input type="url" value={form.facebook} onChange={set("facebook")} onBlur={() => handleBlur("facebook")} placeholder="https://facebook.com/..." style={getStyleForField("facebook")} />
               </Field>
               <Field label="Instagram" error={errors.instagram}>
-                <input type="url" value={form.instagram} onChange={set("instagram")} placeholder="https://instagram.com/..." style={inputStyle(!!errors.instagram)} />
+                <input type="url" value={form.instagram} onChange={set("instagram")} onBlur={() => handleBlur("instagram")} placeholder="https://instagram.com/..." style={getStyleForField("instagram")} />
               </Field>
               <Field label="Twitter / X" error={errors.twitter}>
-                <input type="url" value={form.twitter} onChange={set("twitter")} placeholder="https://twitter.com/..." style={inputStyle(!!errors.twitter)} />
+                <input type="url" value={form.twitter} onChange={set("twitter")} onBlur={() => handleBlur("twitter")} placeholder="https://twitter.com/..." style={getStyleForField("twitter")} />
               </Field>
               <Field label="WhatsApp" error={errors.whatsapp} hint="Solo el número, ej: 0991234567">
-                <input type="tel" value={form.whatsapp} onChange={set("whatsapp")} placeholder="0991234567" style={inputStyle(!!errors.whatsapp)} maxLength={20} />
+                <input type="tel" value={form.whatsapp} onChange={set("whatsapp")} onBlur={() => handleBlur("whatsapp")} placeholder="0991234567" style={getStyleForField("whatsapp")} maxLength={20} />
               </Field>
             </div>
           </SectionCard>
@@ -327,10 +367,10 @@ export default function ConfigCooperativaPage() {
           <SectionCard title="Datos de soporte" icon={<Icon.Headphones />}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <Field label="Correo de soporte" error={errors.emailSoporte}>
-                <input type="email" value={form.emailSoporte} onChange={set("emailSoporte")} placeholder="soporte@cooperativa.com" style={inputStyle(!!errors.emailSoporte)} />
+                <input type="email" value={form.emailSoporte} onChange={set("emailSoporte")} onBlur={() => handleBlur("emailSoporte")} placeholder="soporte@cooperativa.com" style={getStyleForField("emailSoporte")} />
               </Field>
               <Field label="Teléfono de soporte" error={errors.telefonoSoporte}>
-                <input type="tel" value={form.telefonoSoporte} onChange={set("telefonoSoporte")} placeholder="032 123 4567" style={inputStyle(!!errors.telefonoSoporte)} maxLength={20} />
+                <input type="tel" value={form.telefonoSoporte} onChange={set("telefonoSoporte")} onBlur={() => handleBlur("telefonoSoporte")} placeholder="032 123 4567" style={getStyleForField("telefonoSoporte")} maxLength={20} />
               </Field>
             </div>
           </SectionCard>
