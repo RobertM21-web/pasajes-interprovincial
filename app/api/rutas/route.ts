@@ -8,6 +8,7 @@ const rutaSchema = z.object({
   busId: z.string().uuid(),
   fecha: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Fecha inválida' }),
   hojaRutaId: z.string().uuid(),
+  choferId: z.string().uuid().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -159,7 +160,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Datos inválidos', detalles: parsed.error.issues }, { status: 400 })
     }
 
-    const { frecuenciaId, busId, fecha, hojaRutaId } = parsed.data
+const { frecuenciaId, busId, fecha, hojaRutaId, choferId } = parsed.data
     const fechaRuta = new Date(fecha)
 
     // Validar hoja de ruta y rango de fechas
@@ -201,13 +202,14 @@ export async function POST(request: NextRequest) {
     // Crear ruta
     const nuevaRuta = await prisma.ruta.create({
       data: {
-        frecuenciaId,
-        busId,
-        fecha: fechaRuta,
-        hojaRutaId,
-        oficinistaId: usuario.id,
-        estado: 'HABILITADA'
-      }
+  frecuenciaId,
+  busId,
+  fecha: fechaRuta,
+  hojaRutaId,
+  oficinistaId: usuario.id,
+  choferId: choferId || null,
+  estado: 'HABILITADA'
+}
     })
 
     return NextResponse.json(nuevaRuta, { status: 201 })
