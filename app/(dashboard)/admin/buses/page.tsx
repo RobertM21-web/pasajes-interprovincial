@@ -101,12 +101,21 @@ export default function BusesAdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setError("Solo se permite subir una imagen del bus.");
+    const validImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!validImageTypes.includes(file.type)) {
+      setError("Formato no válido. Solo se permiten imágenes (JPG, PNG, WEBP).");
       e.target.value = "";
       return;
     }
 
+    const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSizeInBytes) {
+      setError("La imagen no debe pesar más de 10MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setError(""); // Limpiar error si la imagen es válida
     setFotografiaArchivo(file);
     setFotografiaUrl("");
     setFotografiaPreview(URL.createObjectURL(file));
