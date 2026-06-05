@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/pagos — listar boletos con comprobante pendiente de validación
+// GET /api/pagos — listar boletos con comprobante pendiente de validación
 export async function GET() {
   try {
     const boletos = await prisma.boleto.findMany({
