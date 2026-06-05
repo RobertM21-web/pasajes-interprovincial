@@ -3,15 +3,16 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Calendar, Clock, MapPin, Bus } from "lucide-react";
-
+import { useSession } from "next-auth/react";
 export default function MisRutas() {
   const router = useRouter();
   const [rutas, setRutas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("hoy");
-
-  useEffect(() => {
-    const choferId = "ID_DEL_CHOFER";
+const { data: session } = useSession();
+const choferId = (session?.user as any)?.id;
+ useEffect(() => {
+    if (!choferId) return;
     fetch(`/api/chofer/rutas?choferId=${choferId}`)
       .then((res) => res.json())
       .then((data) => {
@@ -19,7 +20,7 @@ export default function MisRutas() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [choferId]);
 
   const filtrarRutas = () => {
     const ahora = new Date();
