@@ -232,3 +232,26 @@ body {
 .animate-bus-drive {
   animation: driveAndVibrate 2.2s infinite ease-in-out;
 }
+
+
+:root {
+  --color-primary: #2563eb;
+  --color-secondary: #1e40af;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-secondary);
+}
+
+.app-header {
+  background-color: var(--color-primary);
+}
+
+.app-link {
+  color: var(--color-primary);
+}

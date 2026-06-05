@@ -90,20 +90,28 @@ model Usuario {
 // ============================================
 
 model Configuracion {
-  id               String  @id @default(uuid())
-  nombreCooperativa String @map("nombre_cooperativa") @db.NVarChar(150)
-  logoUrl          String? @map("logo_url") @db.NVarChar(500)
-  colorPrimario    String? @map("color_primario") @db.NVarChar(7)
-  colorSecundario  String? @map("color_secundario") @db.NVarChar(7)
-  facebook         String? @db.NVarChar(255)
-  instagram        String? @db.NVarChar(255)
-  twitter          String? @db.NVarChar(255)
-  whatsapp         String? @db.NVarChar(20)
-  emailSoporte     String? @map("email_soporte") @db.NVarChar(150)
-  telefonoSoporte  String? @map("telefono_soporte") @db.NVarChar(20)
-  direccion        String? @db.NVarChar(255)
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(cuid())
+
+  nombreCooperativa String   @map("nombre_cooperativa")
+  logoUrl           String?  @map("logo_url")
+  colorPrimario     String?  @map("color_primario")
+  colorSecundario   String?  @map("color_secundario")
+
+  facebook          String?  @map("facebook")
+  instagram         String?  @map("instagram")
+  twitter           String?  @map("twitter")
+  whatsapp          String?  @map("whatsapp")
+  emailSoporte      String?  @map("email_soporte")
+  telefonoSoporte   String?  @map("telefono_soporte")
+  direccion         String?  @map("direccion")
+
+  nombreBanco       String?  @map("nombre_banco")
+  numeroCuenta      String?  @map("numero_cuenta")
+  titularCuenta     String?  @map("titular_cuenta")
+  rucCooperativa    String?  @map("ruc_cooperativa")
+
+  createdAt         DateTime? @map("created_at")
+  updatedAt         DateTime? @map("updated_at")
 
   @@map("configuracion")
 }

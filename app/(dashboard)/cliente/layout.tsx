@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getDashboardPathForRole } from "@/lib/auth";
+import { getConfiguracionCooperativa } from "@/lib/configuracion";
 
 export default async function ClienteLayout({
   children,
@@ -19,8 +20,10 @@ export default async function ClienteLayout({
     redirect(getDashboardPathForRole(session.user.rol));
   }
 
+  const config = await getConfiguracionCooperativa();
+
   return (
-    <DashboardLayout rol="CLIENTE">
+    <DashboardLayout rol="CLIENTE" config={config}>
       {children}
     </DashboardLayout>
   );

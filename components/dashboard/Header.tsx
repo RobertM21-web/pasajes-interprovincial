@@ -8,12 +8,27 @@ interface HeaderProps {
   userName: string;
   rol: string;
   onToggleSidebar: () => void;
+  config: {
+  nombreCooperativa: string;
+  logoUrl: string;
+  colorPrimario: string;
+  colorSecundario: string;
+  direccion?: string;
+  nombreBanco?: string;
+  numeroCuenta?: string;
+  titularCuenta?: string;
+  rucCooperativa?: string;
+}
 }
 
-export default function Header({ userName, rol, onToggleSidebar }: HeaderProps) {
+export default function Header({
+  userName,
+  rol,
+  onToggleSidebar,
+  config,
+}: HeaderProps) {
   const colors = getRolColor(rol);
 
-  // Obtener iniciales del nombre
   const initials = userName
     .split(" ")
     .map((n) => n[0])
@@ -21,52 +36,77 @@ export default function Header({ userName, rol, onToggleSidebar }: HeaderProps) 
     .toUpperCase()
     .slice(0, 2);
 
+  const panelTitle =
+    getRolLabel(rol) === "Administrador"
+      ? "Panel de Administración"
+      : getRolLabel(rol) === "Oficinista"
+      ? "Panel de Oficinista"
+      : "Portal del Cliente";
+
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-6 bg-white border-b border-[var(--border)] shadow-[var(--shadow-sm)]">
-      {/* Lado izquierdo: Hamburguesa + Título */}
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm sm:px-6">
+      <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={onToggleSidebar}
-          className="lg:hidden p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors"
+          className="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
           aria-label="Abrir menú"
         >
           <Menu className="w-5 h-5" />
         </button>
-        <div className="hidden sm:block">
-          <h1 className="text-lg font-semibold text-[var(--text-primary)]">
-            {getRolLabel(rol) === "Administrador"
-              ? "Panel de Administración"
-              : getRolLabel(rol) === "Oficinista"
-              ? "Panel de Oficinista"
-              : "Portal del Cliente"}
-          </h1>
+
+        <div className="flex items-center gap-3 min-w-0">
+          {config.logoUrl ? (
+            <img
+              src={config.logoUrl}
+              alt={config.nombreCooperativa || "Logo de la cooperativa"}
+              className="h-10 w-10 rounded-lg object-cover border border-slate-200"
+            />
+          ) : (
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-white font-semibold"
+              style={{ backgroundColor: "var(--cooperativa-primary)" }}
+            >
+              {(config.nombreCooperativa || "C").charAt(0).toUpperCase()}
+            </div>
+          )}
+
+          <div className="min-w-0 hidden sm:block">
+            <p
+              className="truncate text-sm font-semibold"
+              style={{ color: "var(--cooperativa-primary)" }}
+            >
+              {config.nombreCooperativa || "Cooperativa"}
+            </p>
+            <h1 className="truncate text-base font-medium text-slate-700">
+              {panelTitle}
+            </h1>
+          </div>
         </div>
       </div>
 
-      {/* Lado derecho: Usuario + Cerrar sesión */}
       <div className="flex items-center gap-3">
-        {/* Info del usuario */}
         <div className="flex items-center gap-3">
-          <div className={`flex items-center justify-center w-9 h-9 rounded-full ${colors.accent} text-white text-sm font-semibold`}>
+          <div
+            className={`flex items-center justify-center w-9 h-9 rounded-full ${colors.accent} text-white text-sm font-semibold`}
+          >
             {initials || <User className="w-4 h-4" />}
           </div>
+
           <div className="hidden sm:block">
-            <p className="text-sm font-medium text-[var(--text-primary)] leading-tight">
+            <p className="text-sm font-medium text-slate-900 leading-tight">
               {userName}
             </p>
-            <p className="text-xs text-[var(--text-muted)] leading-tight">
+            <p className="text-xs text-slate-500 leading-tight">
               {getRolLabel(rol)}
             </p>
           </div>
         </div>
 
-        {/* Separador */}
-        <div className="hidden sm:block w-px h-8 bg-[var(--border)]" />
+        <div className="hidden sm:block w-px h-8 bg-slate-200" />
 
-        {/* Botón cerrar sesión */}
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-red-50 hover:text-red-600"
           title="Cerrar sesión"
         >
           <LogOut className="w-4 h-4" />

@@ -3,17 +3,33 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X, Bus } from "lucide-react";
-import type { NavItem } from "@/lib/navigation";
 import { getRolColor, getRolLabel } from "@/lib/navigation";
 
 interface SidebarProps {
   rol: string;
-  navItems: NavItem[];
+  navItems: any[];
   isOpen: boolean;
   onClose: () => void;
+  config: {
+  nombreCooperativa: string;
+  logoUrl: string;
+  colorPrimario: string;
+  colorSecundario: string;
+  direccion?: string;
+  nombreBanco?: string;
+  numeroCuenta?: string;
+  titularCuenta?: string;
+  rucCooperativa?: string;
+}
 }
 
-export default function Sidebar({ rol, navItems, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({
+  rol,
+  navItems,
+  isOpen,
+  onClose,
+  config,
+}: SidebarProps) {
   const pathname = usePathname();
   const colors = getRolColor(rol);
 
@@ -26,52 +42,64 @@ export default function Sidebar({ rol, navItems, isOpen, onClose }: SidebarProps
 
   return (
     <>
-      {/* Overlay para mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full w-[260px] ${colors.bg} ${colors.text}
-          flex flex-col shadow-xl
+          fixed top-0 left-0 z-50 h-full w-[260px]
+          flex flex-col text-white shadow-xl
           transition-transform duration-300 ease-in-out
           lg:translate-x-0 lg:static lg:z-auto
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
+        style={{
+          background: `linear-gradient(180deg, ${config.colorPrimario || "#0f172a"} 0%, ${config.colorSecundario || "#1e3a8a"} 100%)`,
+        }}
       >
-        {/* Logo y nombre */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-          <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${colors.accent}`}>
-            <Bus className="w-6 h-6 text-white" />
-          </div>
+        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
+          {config.logoUrl ? (
+            <img
+              src={config.logoUrl}
+              alt={config.nombreCooperativa || "Logo de la cooperativa"}
+              className="h-10 w-10 rounded-lg object-cover border border-white/20 bg-white"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+              <Bus className="h-6 w-6 text-white" />
+            </div>
+          )}
+
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-bold truncate">Cooperativa de</h2>
-            <h2 className="text-sm font-bold truncate">Transportes</h2>
+            <h2 className="truncate text-sm font-bold">
+              {config.nombreCooperativa || "Cooperativa de Transporte"}
+            </h2>
+            <p className="truncate text-xs text-white/70">
+              Sistema de pasajes
+            </p>
           </div>
+
           <button
             onClick={onClose}
-            className="lg:hidden p-1 rounded-md hover:bg-white/10 transition-colors"
+            className="rounded-md p-1 transition-colors hover:bg-white/10 lg:hidden"
             aria-label="Cerrar menú"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Badge de rol */}
         <div className="px-5 py-3">
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${colors.badge}`}>
+          <span className="inline-flex items-center rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white">
             {getRolLabel(rol)}
           </span>
         </div>
 
-        {/* Navegación */}
-        <nav className="flex-1 px-3 py-2 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto px-3 py-2">
           <ul className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -83,19 +111,29 @@ export default function Sidebar({ rol, navItems, isOpen, onClose }: SidebarProps
                     href={item.href}
                     onClick={onClose}
                     className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                      flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
                       transition-all duration-200
                       ${
                         active
-                          ? `${colors.accent} text-white shadow-md`
-                          : `text-white/70 hover:text-white hover:bg-white/10`
+                          ? "bg-white text-slate-900 shadow-md"
+                          : "text-white/75 hover:bg-white/10 hover:text-white"
                       }
                     `}
                   >
-                    <Icon className={`w-5 h-5 flex-shrink-0 ${active ? "text-white" : ""}`} />
+                    <Icon
+                      className={`h-5 w-5 flex-shrink-0 ${
+                        active ? "text-slate-900" : "text-white"
+                      }`}
+                    />
                     <span className="truncate">{item.label}</span>
                     {active && (
-                      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white" />
+                      <div
+                        className="ml-auto h-2 w-2 rounded-full"
+                        style={{
+                          backgroundColor:
+                            config.colorPrimario || "var(--cooperativa-primary)",
+                        }}
+                      />
                     )}
                   </Link>
                 </li>
@@ -104,10 +142,9 @@ export default function Sidebar({ rol, navItems, isOpen, onClose }: SidebarProps
           </ul>
         </nav>
 
-        {/* Footer del sidebar */}
-        <div className="px-5 py-4 border-t border-white/10">
-          <p className="text-xs text-white/40">
-            Sistema de Pasajes v0.0.1
+        <div className="border-t border-white/10 px-5 py-4">
+          <p className="text-xs text-white/50">
+            {config.nombreCooperativa || "Cooperativa"} · v0.0.1
           </p>
         </div>
       </aside>

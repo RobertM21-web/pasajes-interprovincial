@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 
+import { useRouter } from "next/navigation";
+
 const configuracionSchema = z.object({
   nombreCooperativa: z.string().min(3, "Mínimo 3 caracteres").max(150, "Máximo 150 caracteres"),
-  logoUrl: z.string().url("URL inválida").optional().or(z.literal("")),
+  logoUrl: z.string().optional().or(z.literal("")),
   colorPrimario: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color hexadecimal inválido (ej. #FFFFFF)").optional().or(z.literal("")),
   colorSecundario: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Color hexadecimal inválido (ej. #FFFFFF)").optional().or(z.literal("")),
   facebook: z.string().url("URL inválida").optional().or(z.literal("")),
@@ -14,8 +16,7 @@ const configuracionSchema = z.object({
   whatsapp: z.string().max(20, "Muy largo").optional().or(z.literal("")),
   emailSoporte: z.string().email("Correo inválido").optional().or(z.literal("")),
   telefonoSoporte: z.string().max(20, "Muy largo").optional().or(z.literal("")),
-  direccion: z.string().max(255, "Muy larga").optional().or(z.literal("")),
-
+  direccion: z.string().max(255, "Máximo 255 caracteres").optional().or(z.literal("")),
   nombreBanco: z.string().max(120, "Máximo 120 caracteres").optional().or(z.literal("")),
   numeroCuenta: z.string().max(50, "Máximo 50 caracteres").optional().or(z.literal("")),
   titularCuenta: z.string().max(150, "Máximo 150 caracteres").optional().or(z.literal("")),
@@ -189,6 +190,8 @@ const EMPTY: ConfigForm = {
 };
 
 export default function ConfigCooperativaPage() {
+
+  const router = useRouter();
   const [form, setForm] = useState<ConfigForm>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof ConfigForm, string>>>({});
   const [loading, setLoading] = useState(true);
@@ -302,12 +305,21 @@ export default function ConfigCooperativaPage() {
       let logoToSave = form.logoUrl;
 
       if (logoFile) {
-        logoToSave = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
-          reader.onerror = () => reject(new Error("No se pudo leer el logo."));
-          reader.readAsDataURL(logoFile);
+        const uploadData = new FormData();
+        uploadData.append("file", logoFile);
+
+        const uploadRes = await fetch("/api/upload/logo", {
+          method: "POST",
+          body: uploadData,
         });
+
+        const uploadJson = await uploadRes.json();
+
+        if (!uploadRes.ok) {
+          throw new Error(uploadJson?.error || "No se pudo subir el logo.");
+        }
+
+        logoToSave = uploadJson.url;
       }
 
       const payload = {
@@ -316,18 +328,25 @@ export default function ConfigCooperativaPage() {
       };
 
       const res = await fetch("/api/configuracion", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
 
-      const json = await res.json();
+        let json: any = null;
+        const raw = await res.text();
 
-      if (!res.ok) {
-        throw new Error(json?.error || "No se pudo guardar la configuración.");
-      }
+        try {
+          json = raw ? JSON.parse(raw) : null;
+        } catch {
+          throw new Error("La API devolvió una respuesta inválida.");
+        }
+
+        if (!res.ok) {
+          throw new Error(json?.error || "No se pudo guardar la configuración.");
+        }
 
       setForm({
         ...EMPTY,
@@ -338,7 +357,10 @@ export default function ConfigCooperativaPage() {
         setLogoPreview(logoToSave);
       }
 
-      setToast({ type: "success", message: "Configuración guardada correctamente." });
+      
+
+        setToast({ type: "success", message: "Configuración guardada correctamente." });
+  router.refresh();
     } catch (error) {
       setToast({
         type: "error",
@@ -459,14 +481,35 @@ export default function ConfigCooperativaPage() {
           <SectionCard title="Redes sociales" icon={<Icon.Share />}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <Field label="Facebook" error={errors.facebook}>
-                <input type="url" value={form.facebook} onChange={set("facebook")} placeholder="https://facebook.com/..." style={inputStyle(!!errors.facebook)} />
-              </Field>
-              <Field label="Instagram" error={errors.instagram}>
-                <input type="url" value={form.instagram} onChange={set("instagram")} placeholder="https://instagram.com/..." style={inputStyle(!!errors.instagram)} />
-              </Field>
-              <Field label="Twitter / X" error={errors.twitter}>
-                <input type="url" value={form.twitter} onChange={set("twitter")} placeholder="https://twitter.com/..." style={inputStyle(!!errors.twitter)} />
-              </Field>
+                  <input
+                    type="url"
+                    value={form.facebook}
+                    onChange={set("facebook")}
+                    placeholder="https://facebook.com/..."
+                    style={inputStyle(!!errors.facebook)}
+                  />
+                </Field>
+
+                <Field label="Instagram" error={errors.instagram}>
+                  <input
+                    type="url"
+                    value={form.instagram}
+                    onChange={set("instagram")}
+                    placeholder="https://instagram.com/..."
+                    style={inputStyle(!!errors.instagram)}
+                  />
+                </Field>
+
+                <Field label="Twitter" error={errors.twitter}>
+                  <input
+                    type="url"
+                    value={form.twitter}
+                    onChange={set("twitter")}
+                    placeholder="https://twitter.com/..."
+                    style={inputStyle(!!errors.twitter)}
+                  />
+                </Field>
+              
               <Field label="WhatsApp" error={errors.whatsapp} hint="Solo el número, ej: 0991234567">
                 <input type="tel" value={form.whatsapp} onChange={set("whatsapp")} placeholder="0991234567" style={inputStyle(!!errors.whatsapp)} maxLength={20} />
               </Field>
