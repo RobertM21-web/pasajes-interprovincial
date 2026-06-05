@@ -74,11 +74,39 @@ export async function PATCH(
       include: {
         asiento: { include: { categoria: true } },
         ruta: { include: { frecuencia: true } },
-        vendidoPor: { select: { id: true, nombre: true } }
+        vendidoPor: { select: { id: true, nombre: true } },
+        usuario: { select: { id: true, nombre: true, email: true } }
       }
     })
 
-    return NextResponse.json(boletoActualizado)
+    let emailMessage: string | null = null
+    let emailError: string | null = null
+
+    if (aprobado) {
+      const emailDestino = boletoActualizado.emailEnvio || boletoActualizado.usuario?.email
+      if (emailDestino) {
+        try {
+          const emailResponse = await fetch(new URL(`/api/email/reenviar/${boletoActualizado.id}`, request.url), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              cookie: request.headers.get("cookie") || "",
+            },
+            body: JSON.stringify({ emailDestino }),
+          })
+          const emailPayload = await emailResponse.json().catch(() => null)
+          if (!emailResponse.ok) {
+            emailError = emailPayload?.error || "No se pudo enviar el boleto por correo."
+          } else {
+            emailMessage = emailPayload?.message || `Boletos enviados a ${emailDestino}. Revisa tu bandeja de entrada.`
+          }
+        } catch (error) {
+          emailError = error instanceof Error ? error.message : "No se pudo enviar el boleto por correo."
+        }
+      }
+    }
+
+    return NextResponse.json({ ...boletoActualizado, emailMessage, emailError })
   } catch (error) {
     return NextResponse.json(
       { error: 'Error al validar el comprobante' },

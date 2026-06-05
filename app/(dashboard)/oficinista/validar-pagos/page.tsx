@@ -81,7 +81,11 @@ export default function ValidarPagosPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "No se pudo validar el pago");
-      setMessage(aprobado ? "Pago aprobado correctamente." : "Pago rechazado y boleto cancelado.");
+      if (aprobado) {
+        setMessage(data.emailMessage || `Pago aprobado correctamente.${data.emailError ? ` ${data.emailError}` : ""}`);
+      } else {
+        setMessage("Pago rechazado y boleto cancelado.");
+      }
       setRechazandoId(null);
       setMotivoRechazo("");
       await loadPagos();
@@ -254,4 +258,4 @@ export default function ValidarPagosPage() {
       </div>
     </section>
   );
-}
+}

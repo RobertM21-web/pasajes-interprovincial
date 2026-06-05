@@ -27,7 +27,8 @@ export async function POST(request: NextRequest) {
             origenTramo,
             destinoTramo,
             metodoPago,
-            canalVenta
+            canalVenta,
+            emailEnvio
           } = item;
 
           if (!rutaId || !asientoId || !pasajeroNombre || !pasajeroCedula || !origenTramo || !destinoTramo) {
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
               canalVenta: canalVenta || 'ONLINE',
               origenTramo,
               destinoTramo,
+              emailEnvio: emailEnvio?.trim()?.toLowerCase() || null,
               estado: canalVenta === 'OFICINA' ? 'PAGADO' : 'PENDIENTE'
             },
             include: {
@@ -101,7 +103,8 @@ export async function POST(request: NextRequest) {
       origenTramo,
       destinoTramo,
       metodoPago,
-      canalVenta
+      canalVenta,
+      emailEnvio
     } = body
     const finalUsuarioId = bodyUsuarioId || usuarioId
 
@@ -150,6 +153,7 @@ export async function POST(request: NextRequest) {
         canalVenta: canalVenta || 'ONLINE',
         origenTramo,
         destinoTramo,
+        emailEnvio: emailEnvio?.trim()?.toLowerCase() || null,
         estado: canalVenta === 'OFICINA' ? 'PAGADO' : 'PENDIENTE'
       },
       include: {
