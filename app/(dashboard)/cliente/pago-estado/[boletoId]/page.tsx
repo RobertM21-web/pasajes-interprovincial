@@ -95,34 +95,66 @@ export default function PagoEstadoPage({ params }: { params: Promise<{ boletoId:
             )}
 
             {esPagado && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center shadow-sm">
-                <div className="text-4xl mb-3">✅</div>
-                <h2 className="text-xl font-semibold text-emerald-700">Pago aprobado</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">
-                  Tu boleto está listo. Ya puedes visualizarlo y descargarlo.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => router.push(`/cliente/boletos/${boletoId}`)}
-                  className="mt-4 inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
-                >
-                  Ver boleto
-                </button>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+                <div className="text-center mb-4">
+                  <div className="text-4xl mb-3">✅</div>
+                  <h2 className="text-xl font-semibold text-emerald-700">Pago aprobado</h2>
+                  <p className="mt-2 text-sm text-[var(--text-muted)]">
+                    Tu boleto está listo. Presenta el código QR al abordar.
+                  </p>
+                </div>
+
+                {boleto.codigoQr ? (
+                  <div className="flex flex-col items-center mt-4">
+                    <div className="bg-white p-4 rounded-xl shadow border border-emerald-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={boleto.codigoQr}
+                        alt="Código QR del boleto"
+                        className="w-48 h-48 object-contain"
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500 font-mono tracking-widest">
+                      TICKET: {boleto.id.split("-")[0].toUpperCase()}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-center text-sm text-emerald-600 mt-2">
+                    Generando código QR...
+                  </p>
+                )}
+
+                <div className="flex justify-center mt-4">
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/cliente/boletos/${boletoId}`)}
+                    className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
+                  >
+                    Ver boleto completo
+                  </button>
+                </div>
               </div>
             )}
 
             {esCancelado && (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
-                <div className="text-4xl mb-3">❌</div>
-                <h2 className="text-xl font-semibold text-red-700">Pago rechazado</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">
-                  El pago fue rechazado por el oficinista.
-                </p>
-                {boleto.motivoRechazo ? (
-                  <p className="mt-3 rounded-xl bg-white p-4 text-left text-sm text-[var(--text-primary)] shadow-sm">
-                    <span className="font-semibold">Motivo:</span> {boleto.motivoRechazo}
+              <div className="rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm">
+                <div className="text-center mb-4">
+                  <div className="text-4xl mb-3">❌</div>
+                  <h2 className="text-xl font-semibold text-red-700">Pago rechazado</h2>
+                  <p className="mt-2 text-sm text-[var(--text-muted)]">
+                    El comprobante enviado fue rechazado por el oficinista.
                   </p>
-                ) : null}
+                </div>
+                {boleto.motivoRechazo ? (
+                  <div className="mt-4 rounded-xl bg-white border border-red-200 p-4 text-left shadow-sm">
+                    <p className="text-xs font-bold uppercase tracking-wide text-red-500 mb-1">Motivo del rechazo</p>
+                    <p className="text-sm text-gray-800">{boleto.motivoRechazo}</p>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-center text-sm text-red-500 italic">
+                    No se especificó motivo de rechazo.
+                  </p>
+                )}
               </div>
             )}
 
