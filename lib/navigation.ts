@@ -29,6 +29,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Usuarios", href: "/admin/usuarios", icon: Users },
   { label: "Roles y Permisos", href: "/admin/roles", icon: Shield },
   { label: "Configuración", href: "/admin/configuracion", icon: Settings },
+  { label: "Choferes", href: "/admin/choferes", icon: Users }, // ← AGREGAR
 ];
 
 export const oficinistaNavItems: NavItem[] = [
@@ -44,6 +45,13 @@ export const clienteNavItems: NavItem[] = [
   { label: "Comprar Pasajes", href: "/cliente/compra-online", icon: Search },
   { label: "Historial", href: "/cliente/historial", icon: History },
 ];
+export const choferNavItems: NavItem[] = [
+  { label: "Inicio", href: "/chofer", icon: LayoutDashboard },
+  { label: "Mis Rutas", href: "/chofer/mis-rutas", icon: Bus },
+  { label: "Reportes", href: "/chofer/reportes", icon: FileText },
+  { label: "Mi Bus", href: "/chofer/mi-bus", icon: Bus },
+];
+
 
 export function getNavItemsByRole(rol: string): NavItem[] {
   switch (rol) {
@@ -53,8 +61,8 @@ export function getNavItemsByRole(rol: string): NavItem[] {
       return oficinistaNavItems;
     case "CLIENTE":
       return clienteNavItems;
-    default:
-      return [];
+    case "CHOFER": return choferNavItems; // ← AGREGAR
+    default: return [];
   }
 }
 
@@ -62,10 +70,13 @@ export function getRolLabel(rol: string): string {
   switch (rol) {
     case "ADMIN":
       return "Administrador";
+      
     case "OFICINISTA":
       return "Oficinista";
     case "CLIENTE":
       return "Cliente";
+    case "CHOFER":
+      return "Chofer";
     default:
       return rol;
   }
@@ -95,6 +106,14 @@ export function getRolColor(rol: string): {
         accentHover: "hover:bg-emerald-500",
         badge: "bg-emerald-500/20 text-emerald-300",
       };
+      case "CHOFER":
+  return {
+    bg: "bg-sky-900",
+    text: "text-white",
+    accent: "bg-sky-600",
+    accentHover: "hover:bg-sky-500",
+    badge: "bg-sky-500/20 text-sky-300",
+  };
     case "CLIENTE":
       return {
         bg: "bg-amber-900",
