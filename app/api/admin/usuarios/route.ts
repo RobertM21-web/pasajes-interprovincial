@@ -1,34 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const rol = searchParams.get("rol");
   try {
     const [usuarios, roles] = await Promise.all([
       prisma.usuario.findMany({
-        include: { rol: true },
-        orderBy: { createdAt: "desc" },
-      }),
+  where: rol ? { rol: { nombre: rol } } : {},
+  include: {
+    rol: true,
+    busAsignado: true, // ← AGREGAR
+  },
+  orderBy: { createdAt: "desc" },
+}),
       prisma.rol.findMany({ orderBy: { nombre: "asc" } }),
     ]);
 
     return NextResponse.json({
-      usuarios: usuarios.map((usuario) => ({
-        id: usuario.id,
-        nombre: usuario.nombre,
-        email: usuario.email,
-        cedula: usuario.cedula,
-        telefono: usuario.telefono,
-        activo: usuario.activo,
-        createdAt: usuario.createdAt,
-        rol: {
-          id: usuario.rol.id,
-          nombre: usuario.rol.nombre,
-        },
-      })),
-      roles: roles.map((rol) => ({
-        id: rol.id,
-        nombre: rol.nombre,
-      })),
+      usuarios: usuarios.map((usuario: any) => ({
+  id: usuario.id,
+  nombre: usuario.nombre,
+  email: usuario.email,
+  cedula: usuario.cedula,
+  telefono: usuario.telefono,
+  activo: usuario.activo,
+  createdAt: usuario.createdAt,
+  licencia: usuario.licencia,
+  tipoLicencia: usuario.tipoLicencia,
+  fotoUrl: usuario.fotoUrl,
+  busAsignado: usuario.busAsignado ? {
+    id: usuario.busAsignado.id,
+    numero: usuario.busAsignado.numero,
+    placa: usuario.busAsignado.placa,
+  } : null,
+  rol: {
+    id: usuario.rol.id,
+    nombre: usuario.rol.nombre,
+  },
+})),
     });
   } catch (error) {
     console.error("GET /api/admin/usuarios error:", error);
@@ -139,5 +149,24 @@ export async function POST(request: NextRequest) {
       { error: "Error al crear usuario" },
       { status: 500 }
     );
+  }
+}
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    
+    if (!id) {
+      return NextResponse.json({ error: "id es requerido" }, { status: 400 });
+    }
+
+    await prisma.usuario.update({
+      where: { id },
+      data: { activo: false },
+    });
+
+    return NextResponse.json({ mensaje: "Usuario desactivado" });
+  } catch (error) {
+    return NextResponse.json({ error: "Error al eliminar" }, { status: 500 });
   }
 }
