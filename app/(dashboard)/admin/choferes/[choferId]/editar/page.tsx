@@ -44,7 +44,7 @@ export default function EditarChofer() {
     const res = await fetch(`/api/admin/usuarios?id=${choferId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ id: choferId, ...form }),
     });
     if (res.ok) {
       setMensaje("✅ Chofer actualizado");

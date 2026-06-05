@@ -313,13 +313,13 @@ model Notificacion {
 
 model ChoferReporte {
   id          String   @id @default(uuid())
-  rutaId      String   @map("ruta_id")
+  rutaId      String?   @map("ruta_id")
   choferId    String   @map("chofer_id")
   tipo        String   @db.NVarChar(30) // RETRASO, DANO, EMERGENCIA, CLIMA, TRAFICO, OTRO
   descripcion String   @db.NVarChar(500)
   createdAt   DateTime @default(now()) @map("created_at")
 
-  ruta   Ruta    @relation(fields: [rutaId], references: [id])
+  ruta   Ruta?    @relation(fields: [rutaId], references: [id])
   chofer Usuario @relation(fields: [choferId], references: [id])
 
   @@map("chofer_reportes")

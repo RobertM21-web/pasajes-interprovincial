@@ -57,9 +57,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { choferId, rutaId, tipo, descripcion } = body;
 
-    if (!choferId || !rutaId || !tipo || !descripcion) {
+    if (!choferId || !tipo || !descripcion) {
       return NextResponse.json(
-        { error: "choferId, rutaId, tipo y descripcion son requeridos" },
+        { error: "choferId, tipo y descripcion son requeridos" },
         { status: 400 }
       );
     }
@@ -72,10 +72,10 @@ export async function POST(request: Request) {
       );
     }
 
-   const reporte = await (prisma as any).choferReporte.create({
+    const reporte = await (prisma as any).choferReporte.create({
       data: {
         choferId,
-        rutaId,
+        rutaId: rutaId || null,
         tipo,
         descripcion,
       },

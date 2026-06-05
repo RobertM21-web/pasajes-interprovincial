@@ -128,16 +128,24 @@ export default function NuevoChofer() {
               </select>
             </div>
             <div>
-  <label className="block text-sm font-medium mb-1">Foto del Chofer</label>
+ 
 <div>
-  <label className="block text-sm font-medium mb-1">URL de la Foto</label>
-  <input type="text" value={form.fotoUrl}
-    onChange={(e) => setForm({ ...form, fotoUrl: e.target.value })}
-    className="w-full border rounded-lg p-2.5"
-    placeholder="https://ejemplo.com/foto.jpg" />
-  {form.fotoUrl && (
-    <img src={form.fotoUrl} alt="Preview" className="mt-2 w-24 h-24 rounded-full object-cover border-2 border-blue-500" />
-  )}
+  <label className="block text-sm font-medium mb-1">Foto del Chofer</label>
+  <input type="file" accept="image/*"
+    onChange={async (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.url) {
+          setForm({ ...form, fotoUrl: data.url });
+        }
+      }
+    }}
+    className="w-full border rounded-lg p-2.5" />
+ 
 </div>
   {form.fotoUrl && (
     <img src={form.fotoUrl} alt="Preview" className="mt-2 w-24 h-24 rounded-full object-cover border-2 border-blue-500" />
