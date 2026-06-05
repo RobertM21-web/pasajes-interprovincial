@@ -13,6 +13,7 @@ import {
   Search,
   History,
   type LucideIcon,
+  AlertTriangle,
 } from "lucide-react";
 
 export interface NavItem {
@@ -30,6 +31,7 @@ export const adminNavItems: NavItem[] = [
   { label: "Roles y Permisos", href: "/admin/roles", icon: Shield },
   { label: "Configuración", href: "/admin/configuracion", icon: Settings },
   { label: "Choferes", href: "/admin/choferes", icon: Users }, // ← AGREGAR
+  { label: "Reportes", href: "/admin/reportes", icon: AlertTriangle },
 ];
 
 export const oficinistaNavItems: NavItem[] = [
