@@ -68,6 +68,7 @@ export default function VentaOficinistaPage() {
   const [enviandoVenta, setEnviandoVenta] = useState(false);
   const [error, setError] = useState("");
   const [boletoExitoso, setBoletoExitoso] = useState<any>(null);
+  const [mostrarPreview, setMostrarPreview] = useState(false);
 
   // Inicialización: Cargar Sesión y Rutas Activas
   useEffect(() => {
@@ -137,8 +138,12 @@ export default function VentaOficinistaPage() {
   const descuentoCalculado = (precioBase * porcentajeDescuento) / 100;
   const precioFinal = precioBase - descuentoCalculado;
 
-  // Enviar Venta a la API (POST /api/ventas de Sandro)
-  const handleVender = async (e: React.FormEvent) => {
+  // Extraer información del bus de las rutas cargadas para el Preview y Ticket
+  const rutaCompleta = rutas.find((r: any) => r.id === rutaSeleccionada);
+  const busNumero = rutaCompleta?.bus?.numero || "N/A";
+  const busPlaca = rutaCompleta?.bus?.placa || "N/A";
+
+  const handlePreview = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -151,7 +156,19 @@ export default function VentaOficinistaPage() {
       setError("La cédula debe tener al menos 10 dígitos.");
       return;
     }
+    
+    if (!pasajeroNombre.trim()) {
+       setError("Debes ingresar el nombre del pasajero.");
+       return;
+    }
 
+    setMostrarPreview(true);
+  };
+
+  // Enviar Venta a la API (POST /api/ventas de Sandro)
+  const handleConfirmarVenta = async () => {
+    setError("");
+    if (!rutaSeleccionada || !asientoSeleccionado || !rutaInfo) return;
     setEnviandoVenta(true);
 
     try {
@@ -184,9 +201,25 @@ export default function VentaOficinistaPage() {
       
       if (!resQr.ok) {
         console.warn("Boleto creado, pero falló la generación del QR.", dataQr.error);
-        setBoletoExitoso({ ...dataVenta, qr: null });
+        setBoletoExitoso({ 
+          pasajero: dataVenta.pasajeroNombre || pasajeroNombre.trim(),
+          cedula: pasajeroCedula.trim(),
+          origen: dataVenta.origenTramo || rutaInfo?.origen,
+          destino: dataVenta.destinoTramo || rutaInfo?.destino,
+          fecha: rutaInfo?.fecha,
+          hora: rutaInfo?.hora,
+          asiento: asientoSeleccionado?.etiqueta,
+          busNumero,
+          busPlaca,
+          qr: null 
+        });
       } else {
-        setBoletoExitoso(dataQr); // dataQr trae { pasajero, asiento, qr (base64), etc }
+        setBoletoExitoso({ 
+          ...dataQr, 
+          cedula: pasajeroCedula.trim(),
+          busNumero,
+          busPlaca
+        }); // dataQr trae { pasajero, asiento, qr (base64), etc }
       }
 
       // 3. Bloquear el asiento recién vendido en la UI
@@ -197,6 +230,7 @@ export default function VentaOficinistaPage() {
       setPasajeroCedula("");
       setAsientoSeleccionado(null);
       setTipoPasajero("NORMAL");
+      setMostrarPreview(false);
 
     } catch (err: any) {
       setError(err.message || "Error al procesar el pago y boleto.");
@@ -232,6 +266,7 @@ export default function VentaOficinistaPage() {
                 <div className="text-center pb-4 border-b border-dashed border-slate-300">
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Pasajero</p>
                   <p className="font-bold text-slate-900 text-lg uppercase truncate">{boletoExitoso.pasajero}</p>
+                  <p className="text-xs text-slate-500 font-medium">CI: {boletoExitoso.cedula}</p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 pb-4 border-b border-dashed border-slate-300">
@@ -249,7 +284,19 @@ export default function VentaOficinistaPage() {
                   </div>
                   <div>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Asiento</p>
-                    <p className="font-bold text-emerald-600 text-lg">{boletoExitoso.asiento}</p>
+                    <p className="font-bold text-emerald-600 text-lg">
+                      {typeof boletoExitoso.asiento === 'object' ? boletoExitoso.asiento?.etiqueta : boletoExitoso.asiento}
+                    </p>
+                  </div>
+                  <div className="col-span-2 flex justify-between bg-slate-50 p-3 rounded-lg border border-slate-200 mt-2">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Bus</p>
+                      <p className="font-bold text-slate-800">Unidad {boletoExitoso.busNumero}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Placa</p>
+                      <p className="font-bold text-slate-800">{boletoExitoso.busPlaca}</p>
+                    </div>
                   </div>
                 </div>
 
@@ -277,6 +324,143 @@ export default function VentaOficinistaPage() {
               >
                 <Printer className="h-4.5 w-4.5" />
                 <span>Imprimir Ticket</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PREVIEW MODAL */}
+      {mostrarPreview && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header del Preview */}
+            <div className="bg-slate-900 p-6 text-center text-white relative shrink-0">
+              <div className="absolute top-4 right-4 bg-white/10 p-1.5 rounded-full cursor-pointer hover:bg-white/20" onClick={() => setMostrarPreview(false)}>
+                <X className="h-4 w-4 text-white" />
+              </div>
+              <Bus className="h-10 w-10 mx-auto mb-2 text-blue-400" />
+              <h3 className="font-black text-xl tracking-widest uppercase">TRANS-ECLIPSE</h3>
+              <p className="text-slate-400 text-xs mt-1 uppercase tracking-widest">COMPROBANTE DE COMPRA - PREVIEW</p>
+            </div>
+            
+            {/* Cuerpo del Preview */}
+            <div className="p-6 bg-slate-50 relative overflow-y-auto">
+              {error && (
+                <div className="mb-4 flex items-start space-x-2.5 bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl text-sm animate-fade-in">
+                  <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+              <div className="space-y-6">
+                {/* Datos del viaje */}
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center">
+                    <MapPin className="w-4 h-4 mr-2" /> Datos del Viaje
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Ruta</p>
+                      <p className="font-bold text-slate-900">{rutaInfo?.origen} ➔ {rutaInfo?.destino}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Salida</p>
+                      <p className="font-bold text-blue-600">{rutaInfo?.fecha} • {rutaInfo?.hora}</p>
+                    </div>
+                    <div className="col-span-2 flex justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Bus</p>
+                        <p className="font-bold text-slate-800">Unidad {busNumero}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Placa</p>
+                        <p className="font-bold text-slate-800">{busPlaca}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabla de pasajeros */}
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-slate-50 text-xs text-slate-500 uppercase border-b border-slate-200">
+                      <tr>
+                        <th className="px-4 py-3 font-bold">Pasajero</th>
+                        <th className="px-4 py-3 font-bold">Asiento</th>
+                        <th className="px-4 py-3 font-bold">Tipo</th>
+                        <th className="px-4 py-3 font-bold text-right">Precio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-slate-100 last:border-0">
+                        <td className="px-4 py-3">
+                          <p className="font-bold text-slate-900">{pasajeroNombre}</p>
+                          <p className="text-xs text-slate-500">CI: {pasajeroCedula}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                            {asientoSeleccionado?.etiqueta} ({asientoSeleccionado?.categoria})
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs font-medium text-slate-600">
+                            {tipoPasajero.replace('_', ' ')}
+                            {porcentajeDescuento > 0 && ` (-${porcentajeDescuento}%)`}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {porcentajeDescuento > 0 && (
+                            <p className="text-slate-400 line-through text-xs">${precioBase.toFixed(2)}</p>
+                          )}
+                          <p className="font-bold text-slate-900">${precioFinal.toFixed(2)}</p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Total y Mensaje */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200 gap-4">
+                  <div className="flex items-start space-x-3 text-amber-800">
+                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                    <p className="text-sm font-medium">Esta es una vista previa. Los boletos se generarán después del pago.</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs text-amber-800/70 font-bold uppercase mb-1">Total Final</p>
+                    <p className="text-3xl font-black text-amber-900">${precioFinal.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer de acción */}
+            <div className="p-4 bg-white border-t border-slate-200 flex space-x-3 shrink-0">
+              <button 
+                onClick={() => setMostrarPreview(false)}
+                disabled={enviandoVenta}
+                className="flex-1 py-3 rounded-xl font-bold border border-slate-300 text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Volver a seleccionar asientos
+              </button>
+              <button 
+                onClick={handleConfirmarVenta}
+                disabled={enviandoVenta}
+                className="flex-1 py-3 rounded-xl font-bold bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition flex items-center justify-center space-x-2 disabled:opacity-50"
+              >
+                {enviandoVenta ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Procesando...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span>Confirmar y pagar</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -397,7 +581,7 @@ export default function VentaOficinistaPage() {
 
         {/* COLUMNA DERECHA: Datos del Pasajero y Checkout (5 Columnas) */}
         <div className="lg:col-span-5 space-y-6">
-          <form onSubmit={handleVender} className={`bg-white rounded-2xl border shadow-xl transition duration-300 overflow-hidden ${!asientoSeleccionado ? 'opacity-50 pointer-events-none grayscale-[50%] border-slate-200' : 'border-blue-200 shadow-blue-500/10'}`}>
+          <form onSubmit={handlePreview} className={`bg-white rounded-2xl border shadow-xl transition duration-300 overflow-hidden ${!asientoSeleccionado ? 'opacity-50 pointer-events-none grayscale-[50%] border-slate-200' : 'border-blue-200 shadow-blue-500/10'}`}>
             
             <div className="bg-slate-900 p-6 text-white">
               <h3 className="text-sm font-bold flex items-center space-x-2 border-b border-slate-700 pb-3 mb-4">
@@ -502,7 +686,7 @@ export default function VentaOficinistaPage() {
                 ) : (
                   <>
                     <CreditCard className="h-5 w-5" />
-                    <span>Cobrar y Emitir Boleto</span>
+                    <span>Revisar y Pagar</span>
                   </>
                 )}
               </button>
