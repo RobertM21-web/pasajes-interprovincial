@@ -21,7 +21,7 @@ export default function ListaChoferes() {
 
   const eliminarChofer = async (id: string) => {
     if (!confirm("¿Estás seguro de eliminar este chofer?")) return;
-    await fetch(`/api/admin/usuarios/${id}`, { method: "DELETE" });
+    await fetch(`/api/admin/usuarios?id=${id}`, { method: "DELETE" });
     setChoferes(choferes.filter((c) => c.id !== id));
   };
 

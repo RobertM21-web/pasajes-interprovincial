@@ -18,6 +18,7 @@ export default function NuevoChofer() {
     licencia: "",
     tipoLicencia: "C",
     busAsignadoId: "",
+    fotoUrl: "",
   });
 
   useEffect(() => {
@@ -126,6 +127,22 @@ export default function NuevoChofer() {
                 <option value="E">E - Especial</option>
               </select>
             </div>
+            <div>
+  <label className="block text-sm font-medium mb-1">Foto del Chofer</label>
+<div>
+  <label className="block text-sm font-medium mb-1">URL de la Foto</label>
+  <input type="text" value={form.fotoUrl}
+    onChange={(e) => setForm({ ...form, fotoUrl: e.target.value })}
+    className="w-full border rounded-lg p-2.5"
+    placeholder="https://ejemplo.com/foto.jpg" />
+  {form.fotoUrl && (
+    <img src={form.fotoUrl} alt="Preview" className="mt-2 w-24 h-24 rounded-full object-cover border-2 border-blue-500" />
+  )}
+</div>
+  {form.fotoUrl && (
+    <img src={form.fotoUrl} alt="Preview" className="mt-2 w-24 h-24 rounded-full object-cover border-2 border-blue-500" />
+  )}
+</div>
           </div>
         </div>
 
