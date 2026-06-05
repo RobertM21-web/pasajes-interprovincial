@@ -48,6 +48,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "usuarioId es requerido" }, { status: 400 });
     }
 
+
     const data: { rolId?: string; activo?: boolean } = {};
     if (typeof rolId === "string") data.rolId = rolId;
     if (typeof activo === "boolean") data.activo = activo;
@@ -73,6 +74,69 @@ export async function PATCH(request: NextRequest) {
     console.error("PATCH /api/admin/usuarios error:", error);
     return NextResponse.json(
       { error: "Error al actualizar usuario" },
+      { status: 500 }
+    );
+  }
+}
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { nombre, email, password, cedula, licencia, tipoLicencia, busAsignadoId, fotoUrl, rol } = body;
+
+    if (!nombre || !email || !password || !rol) {
+      return NextResponse.json(
+        { error: "nombre, email, password y rol son requeridos" },
+        { status: 400 }
+      );
+    }
+
+    // Buscar el rol
+    const rolData = await prisma.rol.findFirst({
+      where: { nombre: rol },
+    });
+
+    if (!rolData) {
+      return NextResponse.json({ error: "Rol no encontrado" }, { status: 400 });
+    }
+
+    // Hash de la contraseña
+    const bcrypt = await import("bcryptjs");
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const usuario = await prisma.usuario.create({
+      data: {
+        nombre,
+        email,
+        passwordHash,
+        cedula: cedula || null,
+        telefono: null,
+        licencia: licencia || null,
+        tipoLicencia: tipoLicencia || null,
+        busAsignadoId: busAsignadoId || null,
+        fotoUrl: fotoUrl || null,
+        rolId: rolData.id,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        rol: rol,
+      },
+      { status: 201 }
+    );
+  } catch (error: any) {
+    console.error("POST /api/admin/usuarios error:", error);
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        { error: "Ya existe un usuario con ese email o cédula" },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json(
+      { error: "Error al crear usuario" },
       { status: 500 }
     );
   }
