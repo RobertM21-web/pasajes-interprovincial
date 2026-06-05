@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Bus, Users, Clock, AlertTriangle } from "lucide-react";
 
 export default function DashboardChofer() {
-  const [rutas, setRutas] = useState([]);
+const [rutas, setRutas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
