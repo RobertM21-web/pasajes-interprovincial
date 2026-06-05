@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Download, Loader2 } from 'lucide-react'
 
 interface ExportPDFButtonProps {
-  tipo: 'boletos' | 'hoja-ruta'
+  tipo: 'boletos' | 'hoja-ruta' | 'ingresos' | 'pasajeros'
   data: any[]
   extraInfo?: any
   label?: string
@@ -29,6 +29,18 @@ export default function ExportPDFButton({
       if (tipo === 'boletos') {
         const { generateBoletosReporte } = await import('@/lib/pdf-generator')
         generateBoletosReporte(data, titulo || 'Boletos Vendidos')
+        return
+      }
+
+      if (tipo === 'ingresos') {
+        const { generateIngresosPorRuta } = await import('@/lib/pdf-generator')
+        generateIngresosPorRuta(data, titulo || 'Ingresos por Ruta')
+        return
+      }
+
+      if (tipo === 'pasajeros') {
+        const { generateBoletosReporte } = await import('@/lib/pdf-generator')
+        generateBoletosReporte(data, titulo || 'Pasajeros por Viaje')
         return
       }
 

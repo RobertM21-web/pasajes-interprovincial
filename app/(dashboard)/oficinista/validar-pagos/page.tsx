@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ExportPDFButton from '@/components/ui/ExportPDFButton'
 
 interface BoletoPago {
   id: string;
@@ -32,6 +33,7 @@ export default function ValidarPagosPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [exportData, setExportData] = useState<any[]>([]);
 
   async function loadPagos() {
     setLoading(true);
@@ -51,6 +53,22 @@ export default function ValidarPagosPage() {
   useEffect(() => {
     loadPagos();
   }, []);
+
+  useEffect(() => {
+    // Prepara datos serializados para exportar
+    setExportData(
+      boletos.map((b) => ({
+        id: b.id,
+        pasajero: b.pasajeroNombre,
+        cedula: b.pasajeroCedula,
+        origen: b.origenTramo,
+        destino: b.destinoTramo,
+        asiento: b.asiento?.etiqueta,
+        precio: b.precioFinal,
+        fecha: b.createdAt
+      }))
+    )
+  }, [boletos]);
 
   async function validarPago(boletoId: string, aprobado: boolean) {
     setSavingId(boletoId);
@@ -78,9 +96,15 @@ export default function ValidarPagosPage() {
 
   return (
     <section className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Validar Pagos</h1>
-        <p className="text-sm text-gray-600">Aprueba o rechaza comprobantes pendientes.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Validar Pagos</h1>
+          <p className="text-sm text-gray-600">Aprueba o rechaza comprobantes pendientes.</p>
+        </div>
+        {exportData.length > 0 && (
+          // @ts-ignore - componente client
+          <ExportPDFButton tipo="boletos" data={exportData} titulo="Pagos pendientes" label="Exportar pagos" variant="outline" />
+        )}
       </div>
 
       {message && <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</div>}

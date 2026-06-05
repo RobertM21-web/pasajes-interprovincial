@@ -15,6 +15,7 @@ import {
   Printer,
   X
 } from "lucide-react";
+import ExportPDFButton from '@/components/ui/ExportPDFButton'
 
 // Interfaces basadas en la API de Sandro
 interface AsientoMap {
@@ -52,6 +53,7 @@ export default function VentaOficinistaPage() {
   const [rutaSeleccionada, setRutaSeleccionada] = useState<string>("");
   const [rutaInfo, setRutaInfo] = useState<RutaDetalle | null>(null);
   const [loadingRutas, setLoadingRutas] = useState(true);
+  const [ventasRuta, setVentasRuta] = useState<any[]>([]);
 
   // 2. Estados del Mapa de Asientos (API de Sandro)
   const [asientos, setAsientos] = useState<AsientoMap[]>([]);
@@ -103,6 +105,7 @@ export default function VentaOficinistaPage() {
       setAsientos([]);
       setAsientoSeleccionado(null);
       setRutaInfo(null);
+      setVentasRuta([]);
       return;
     }
 
@@ -126,6 +129,24 @@ export default function VentaOficinistaPage() {
       }
     }
     cargarAsientos();
+  }, [rutaSeleccionada]);
+
+  useEffect(() => {
+    // Cargar ventas de la ruta seleccionada para permitir exportar pasajeros
+    if (!rutaSeleccionada) return;
+    let mounted = true;
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/ventas?rutaId=${rutaSeleccionada}`);
+        if (!res.ok) return setVentasRuta([]);
+        const data = await res.json();
+        if (!mounted) return;
+        setVentasRuta(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setVentasRuta([]);
+      }
+    })();
+    return () => { mounted = false }
   }, [rutaSeleccionada]);
 
   // Cálculos de Tarifa en tiempo real
@@ -292,6 +313,11 @@ export default function VentaOficinistaPage() {
           <h2 className="text-xl font-bold text-slate-950">Venta en Ventanilla</h2>
           <p className="text-xs text-slate-500 mt-0.5">Asignación de asientos y emisión de boletos presenciales.</p>
         </div>
+        {ventasRuta.length > 0 && (
+          <div className="ml-auto">
+            <ExportPDFButton tipo="pasajeros" data={ventasRuta} titulo="Pasajeros por viaje" label="Exportar pasajeros" variant="outline" />
+          </div>
+        )}
       </div>
 
       {error && (

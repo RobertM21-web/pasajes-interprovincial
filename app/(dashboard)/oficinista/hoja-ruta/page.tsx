@@ -6,6 +6,7 @@ import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import { CrearHojaRutaModal } from '@/components/hoja-ruta/CrearHojaRutaModal'
 import { HabilitarRutaModal } from '@/components/hoja-ruta/HabilitarRutaModal'
+import ExportPDFButton from '@/components/ui/ExportPDFButton'
 
 export default async function HojaRutaPage() {
   const session = await getServerSession()
@@ -114,15 +115,33 @@ export default async function HojaRutaPage() {
           <p className="text-gray-500 mt-1">Gestión de rutas y frecuencias asignadas</p>
         </div>
         
-        {!hojaRutaActiva ? (
-          <CrearHojaRutaModal />
-        ) : (
-          <HabilitarRutaModal hojaRuta={{
-            id: hojaRutaActiva.id,
-            fechaInicio: hojaRutaActiva.fechaInicio.toISOString(),
-            tipo: hojaRutaActiva.tipo
-          }} />
-        )}
+        <div className="flex items-center gap-3">
+          {hojaRutaActiva && hojaRutaActiva.rutas.length > 0 && (
+            <ExportPDFButton
+              tipo="hoja-ruta"
+              data={hojaRutaActiva.rutas}
+              extraInfo={{
+                id: hojaRutaActiva.id,
+                tipo: hojaRutaActiva.tipo,
+                fechaInicio: hojaRutaActiva.fechaInicio.toISOString(),
+                habilitada: hojaRutaActiva.habilitada,
+                rutas: hojaRutaActiva.rutas
+              }}
+              label="Exportar hoja"
+              variant="outline"
+            />
+          )}
+          
+          {!hojaRutaActiva ? (
+            <CrearHojaRutaModal />
+          ) : (
+            <HabilitarRutaModal hojaRuta={{
+              id: hojaRutaActiva.id,
+              fechaInicio: hojaRutaActiva.fechaInicio.toISOString(),
+              tipo: hojaRutaActiva.tipo
+            }} />
+          )}
+        </div>
       </div>
 
       {/* Empty State */}

@@ -197,3 +197,50 @@ export function generateHojaRutaPDF(hojaRuta: any): void {
 }
 
 export { crearDocumentoBase, formatearFechaArchivo }
+
+export function generateIngresosPorRuta(boletos: any[], titulo = 'Ingresos por Ruta') {
+  const { doc, startY } = crearDocumentoBase(titulo, 'Reporte de ingresos por ruta')
+
+  if (boletos.length === 0) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    doc.setTextColor('#6B7280')
+    doc.text('No hay datos para mostrar', 105, 140, { align: 'center' })
+  } else {
+    // Agrupar por ruta (origen-destino-hora)
+    const agrupado: Record<string, { rutas: any[]; totalIngresos: number }> = {}
+    for (const b of boletos) {
+      const clave = `${b.ruta?.origen || b.origenTramo || '-'} → ${b.ruta?.destino || b.destinoTramo || '-'} | ${b.ruta?.frecuencia?.hora || b.hora || '-'} `
+      if (!agrupado[clave]) agrupado[clave] = { rutas: [], totalIngresos: 0 }
+      agrupado[clave].rutas.push(b)
+      agrupado[clave].totalIngresos += Number(b.precioFinal || b.precio || 0)
+    }
+
+    const rows = Object.entries(agrupado).map(([clave, val], idx) => [
+      idx + 1,
+      clave,
+      String(val.rutas.length),
+      '$' + val.totalIngresos.toFixed(2)
+    ])
+
+    autoTable(doc, {
+      startY,
+      head: [['#', 'Ruta', 'Boletos Vendidos', 'Ingresos']],
+      body: rows,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold' },
+      columnStyles: { 0: { cellWidth: 10 }, 2: { halign: 'right' }, 3: { halign: 'right' } }
+    })
+  }
+
+  const pageCount = doc.getNumberOfPages()
+  for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+    doc.setPage(pageNumber)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor('#9CA3AF')
+    doc.text(`Página ${pageNumber} de ${pageCount}`, 105, 287, { align: 'center' })
+  }
+
+  doc.save('ingresos-por-ruta-' + formatearFechaArchivo() + '.pdf')
+}
