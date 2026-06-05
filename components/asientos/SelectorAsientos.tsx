@@ -220,8 +220,8 @@ export default function SelectorAsientos({
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow">
-      <h2 className="text-2xl font-bold mb-6 text-center text-black">
+    <div className="w-full max-w-3xl mx-auto p-3 sm:p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center text-black">
         Selecciona tu asiento
       </h2>
       {(tipoPasajero || precioFinal) && (
@@ -232,10 +232,10 @@ export default function SelectorAsientos({
       )}
 
       {/* Selector de Piso */}
-      <div className="flex justify-center gap-4 mb-6">
+      <div className="flex flex-wrap justify-center gap-3 mb-6">
         <button
           onClick={() => cambiarPiso(1)}
-          className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+          className={`px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base font-semibold transition-all ${
             floor === 1 ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
         >
@@ -243,7 +243,7 @@ export default function SelectorAsientos({
         </button>
         <button
           onClick={() => cambiarPiso(2)}
-          className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+          className={`px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base font-semibold transition-all ${
             floor === 2 ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
         >
@@ -252,13 +252,13 @@ export default function SelectorAsientos({
       </div>
 
       <div className="flex justify-center mb-6">
-        <div className="w-32 h-10 bg-gray-300 rounded-t-3xl flex items-center justify-center text-sm font-medium text-gray-700">
+        <div className="w-24 sm:w-32 h-10 bg-gray-300 rounded-t-3xl flex items-center justify-center text-xs sm:text-sm font-medium text-gray-700">
           Conductor
         </div>
       </div>
 
       {/* Renderizado de filas del autobús */}
-      <div className="max-w-sm mx-auto bg-gray-50 border border-gray-200 rounded-3xl p-6 shadow-inner">
+      <div className="w-full max-w-sm mx-auto bg-gray-50 border border-gray-200 rounded-3xl p-3 sm:p-6 shadow-inner overflow-x-auto">
         <div className="flex flex-col gap-3">
           {sortedRows.map((filaNum) => {
             const asientosDeFila = rowsMap[filaNum];
@@ -308,7 +308,7 @@ export default function SelectorAsientos({
                           setSelectedSeat(seat.id);
                         }
                       }}
-                      className={`group relative h-12 w-full rounded-xl font-bold text-xs flex flex-col items-center justify-center transition-all ${seatStyle}`}
+                      className={`group relative h-11 sm:h-12 w-full rounded-xl font-bold text-[10px] sm:text-xs flex flex-col items-center justify-center transition-all ${seatStyle}`}
                     >
                   <div className="flex items-center gap-0.5">
                     <span>{seat.etiqueta}</span>
@@ -340,7 +340,7 @@ export default function SelectorAsientos({
             };
 
             return (
-              <div key={`fila-${filaNum}`} className="grid grid-cols-5 gap-2 items-center">
+              <div key={`fila-${filaNum}`} className="grid grid-cols-5 gap-1 sm:gap-2 items-center min-w-[260px]">
                 {renderButton(asientoA)}
                 {renderButton(asientoB)}
 
@@ -358,7 +358,7 @@ export default function SelectorAsientos({
       </div>
 
       {/* Leyenda Dinámica */}
-      <div className="flex flex-wrap gap-4 mt-6 justify-center text-xs text-gray-600">
+      <div className="flex flex-wrap gap-2 sm:gap-4 mt-6 justify-center text-[10px] sm:text-xs text-gray-600">
   <div className="flex items-center gap-1.5">
     <div className="w-3.5 h-3.5 rounded bg-green-400" />
     Normal
@@ -391,7 +391,7 @@ export default function SelectorAsientos({
 
       {/* Panel Informativo de Selección */}
       {selectedSeatData && (
-        <div className="mt-6 max-w-sm mx-auto bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+        <div className="mt-6 max-w-sm mx-auto bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 shadow-sm">
           <p className="text-base font-medium text-gray-800">
             Asiento seleccionado:
             <span className="ml-2 text-amber-600 font-bold">{selectedSeatData.etiqueta}</span>
