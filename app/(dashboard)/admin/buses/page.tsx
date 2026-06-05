@@ -1,18 +1,38 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Bus, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  Bus,
+  Plus,
+  Edit2,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
   X,
   Users,
   Info,
-  Eye
+  Eye,
 } from "lucide-react";
+import { validarCampo, validarPlacaEcuador } from "@/lib/validaciones";
+
+// ─── helpers de estilo para el modal de buses ───────────────
+function busInputClass(error: string, valid: boolean): string {
+  const base =
+    "w-full px-3.5 py-2 rounded-xl outline-none text-sm transition border";
+  if (error) return `${base} border-red-500 bg-red-50/40 focus:ring-2 focus:ring-red-500/20 text-slate-900`;
+  if (valid) return `${base} border-emerald-400 bg-emerald-50/20 focus:ring-2 focus:ring-emerald-500/20 text-slate-900`;
+  return `${base} border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900`;
+}
+
+function BusFieldError({ msg }: { msg: string }) {
+  if (!msg) return null;
+  return (
+    <p className="flex items-center gap-1 text-[11px] font-medium text-red-600 mt-1 animate-fade-in">
+      <AlertCircle className="h-3 w-3 shrink-0" />
+      {msg}
+    </p>
+  );
+}
 
 interface Asiento {
   id: string;
@@ -82,6 +102,39 @@ export default function BusesAdminPage() {
   const [catDescripcion, setCatDescripcion] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
+
+  // Errores inline del modal de bus
+  const [erroresBus, setErroresBus] = useState<Record<string, string>>({});
+  const [tocadosBus, setTocadosBus] = useState<Record<string, boolean>>({});
+
+  const validarBusField = (campo: string, valor: string | number) => {
+    let msg = "";
+    const v = String(valor).trim();
+    switch (campo) {
+      case "placa":
+        msg = v ? (validarPlacaEcuador(v.toUpperCase()) ? "" : "Formato inválido. Ejemplo: ABC-1234") : "La placa es obligatoria";
+        break;
+      case "marcaChasis":
+        msg = v.length < 2 ? "Mínimo 2 caracteres" : "";
+        break;
+      case "marcaCarroceria":
+        msg = v.length < 2 ? "Mínimo 2 caracteres" : "";
+        break;
+      case "numero":
+        msg = v ? "" : "El número de bus es obligatorio";
+        break;
+    }
+    setErroresBus((prev) => ({ ...prev, [campo]: msg }));
+    return msg;
+  };
+
+  const marcarBus = (campo: string) =>
+    setTocadosBus((prev) => ({ ...prev, [campo]: true }));
+
+  const busValido = (campo: string, valor: string) =>
+    tocadosBus[campo] && !erroresBus[campo] && valor.length > 0;
+
+  const hayErroresBus = Object.values(erroresBus).some((e) => e !== "");
 
   // Calcula automáticamente el total de asientos sumando las categorías creadas
   const totalAsientosCalculados = categoriasNuevaFlota.reduce((acc, cat) => acc + Number(cat.cantidad), 0);
@@ -156,6 +209,8 @@ export default function BusesAdminPage() {
       { nombre: "Normal", precioBase: 5.0, cantidad: 30, descripcion: "Asiento estándar de la unidad" }
     ]);
     setError("");
+    setErroresBus({});
+    setTocadosBus({});
     setIsBusModalOpen(true);
   };
 
@@ -170,6 +225,8 @@ export default function BusesAdminPage() {
     setEnTerminal(bus.enTerminal);
     setActivo(bus.activo);
     setError("");
+    setErroresBus({});
+    setTocadosBus({});
     setIsBusModalOpen(true);
   };
 
@@ -178,14 +235,31 @@ export default function BusesAdminPage() {
     e.preventDefault();
     setError("");
     setSuccess("");
-    setSubmitting(true);
 
-    const regexPlaca = /^[A-Z]{3}-\d{3,4}$/;
-    if (!regexPlaca.test(placa.toUpperCase().trim())) {
-      setError("La placa debe cumplir el formato oficial (Ej. ABC-1234).");
-      setSubmitting(false);
+    // Validar todos los campos antes de enviar
+    const campos = { placa, marcaChasis, marcaCarroceria, numero };
+    const nuevosErrores: Record<string, string> = {};
+    const nuevosTocados: Record<string, boolean> = {};
+    for (const [campo, valor] of Object.entries(campos)) {
+      nuevosTocados[campo] = true;
+      const msg = validarBusField(campo, valor);
+      if (msg) nuevosErrores[campo] = msg;
+    }
+    setTocadosBus(nuevosTocados);
+    setErroresBus((prev) => ({ ...prev, ...nuevosErrores }));
+
+    if (Object.keys(nuevosErrores).length > 0) {
+      setError("Por favor corrige los errores en el formulario.");
       return;
     }
+
+    // Validar total de asientos
+    if (!editingBus && totalAsientosCalculados > 50) {
+      setError(`El total de asientos (${totalAsientosCalculados}) supera el máximo permitido de 50.`);
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
       if (editingBus) {
@@ -625,12 +699,18 @@ export default function BusesAdminPage() {
                       id="bus-numero"
                       type="text"
                       value={numero}
-                      onChange={(e) => setNumero(e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        setNumero(val);
+                        validarBusField("numero", val);
+                      }}
+                      onBlur={() => marcarBus("numero")}
                       placeholder="Ej. 01"
                       required
                       disabled={editingBus !== null}
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-slate-50/50 focus:bg-white text-slate-900 font-mono disabled:opacity-60"
+                      className={`w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-slate-50/50 focus:bg-white text-slate-900 font-mono disabled:opacity-60 ${busInputClass(tocadosBus.numero ? erroresBus.numero ?? "" : "", busValido("numero", numero))}`}
                     />
+                    <BusFieldError msg={tocadosBus.numero ? (erroresBus.numero ?? "") : ""} />
                   </div>
 
                   <div className="space-y-1.5">
@@ -640,42 +720,60 @@ export default function BusesAdminPage() {
                       type="text"
                       maxLength={8}
                       value={placa}
-                      onChange={(e) => setPlaca(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase();
+                        setPlaca(val);
+                        validarBusField("placa", val);
+                      }}
+                      onBlur={() => marcarBus("placa")}
                       placeholder="Ej. TAA-0101"
                       required
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-slate-50/50 focus:bg-white text-slate-900 font-mono"
+                      className={`w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-slate-50/50 focus:bg-white text-slate-900 font-mono ${busInputClass(tocadosBus.placa ? erroresBus.placa ?? "" : "", busValido("placa", placa))}`}
                     />
+                    <BusFieldError msg={tocadosBus.placa ? (erroresBus.placa ?? "") : ""} />
                   </div>
                 </div>
 
                 {/* Inputs de Fabricante */}
                 <div className="space-y-4">
                   <h4 className="text-xs font-bold text-blue-600 uppercase tracking-widest border-b border-slate-100 pb-1">Marca e Ingeniería</h4>
-                  
+
                   <div className="space-y-1.5">
-                    <label htmlFor="bus-chasis" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Marca del Chasis *</label>
+                    <label htmlFor="bus-chasis" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Marca del Chasis <span className="text-red-500">*</span>
+                    </label>
                     <input
                       id="bus-chasis"
                       type="text"
                       value={marcaChasis}
-                      onChange={(e) => setMarcaChasis(e.target.value)}
+                      onChange={(e) => {
+                        setMarcaChasis(e.target.value);
+                        validarBusField("marcaChasis", e.target.value);
+                      }}
+                      onBlur={() => marcarBus("marcaChasis")}
                       placeholder="Ej. Mercedes-Benz"
-                      required
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-slate-50/50 focus:bg-white text-slate-900"
+                      className={busInputClass(tocadosBus.marcaChasis ? erroresBus.marcaChasis ?? "" : "", busValido("marcaChasis", marcaChasis))}
                     />
+                    <BusFieldError msg={tocadosBus.marcaChasis ? (erroresBus.marcaChasis ?? "") : ""} />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label htmlFor="bus-carroceria" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Marca de Carrocería *</label>
+                    <label htmlFor="bus-carroceria" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Marca de Carrocería <span className="text-red-500">*</span>
+                    </label>
                     <input
                       id="bus-carroceria"
                       type="text"
                       value={marcaCarroceria}
-                      onChange={(e) => setMarcaCarroceria(e.target.value)}
+                      onChange={(e) => {
+                        setMarcaCarroceria(e.target.value);
+                        validarBusField("marcaCarroceria", e.target.value);
+                      }}
+                      onBlur={() => marcarBus("marcaCarroceria")}
                       placeholder="Ej. Marcopolo"
-                      required
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-slate-50/50 focus:bg-white text-slate-900"
+                      className={busInputClass(tocadosBus.marcaCarroceria ? erroresBus.marcaCarroceria ?? "" : "", busValido("marcaCarroceria", marcaCarroceria))}
                     />
+                    <BusFieldError msg={tocadosBus.marcaCarroceria ? (erroresBus.marcaCarroceria ?? "") : ""} />
                   </div>
                 </div>
               </div>
@@ -797,15 +895,28 @@ export default function BusesAdminPage() {
 
                         {/* Input de Cantidad */}
                         <div className="sm:col-span-3 space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nro. Asientos</label>
-                          <input 
-                            type="number" 
-                            required 
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nro. Asientos (máx. 50)</label>
+                          <input
+                            type="number"
+                            required
                             min="1"
+                            max="50"
                             value={cat.cantidad}
-                            onChange={(e) => handleUpdateCategoriaNuevaFlota(idx, "cantidad", Number(e.target.value))}
-                            className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 bg-white font-mono"
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              handleUpdateCategoriaNuevaFlota(idx, "cantidad", val);
+                            }}
+                            className={`w-full px-3 py-1.5 rounded-lg text-xs outline-none font-mono border ${
+                              Number(cat.cantidad) > 50
+                                ? "border-red-500 bg-red-50/30 focus:ring-1 focus:ring-red-500/20"
+                                : "border-slate-200 focus:border-blue-500 bg-white"
+                            }`}
                           />
+                          {Number(cat.cantidad) > 50 && (
+                            <p className="text-[10px] text-red-600 font-medium flex items-center gap-0.5">
+                              <AlertCircle className="h-3 w-3" /> Máximo 50 asientos permitidos
+                            </p>
+                          )}
                         </div>
 
                         {/* Eliminar categoría */}
@@ -830,6 +941,14 @@ export default function BusesAdminPage() {
                 </div>
               )}
 
+              {/* Aviso de máx asientos si se excede */}
+              {!editingBus && totalAsientosCalculados > 50 && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-4 py-2.5 rounded-xl animate-fade-in">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  El total de asientos ({totalAsientosCalculados}) supera el máximo de 50.
+                </div>
+              )}
+
               {/* Botones del Modal Principal */}
               <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100 shrink-0">
                 <button
@@ -841,8 +960,8 @@ export default function BusesAdminPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition disabled:opacity-50"
+                  disabled={submitting || (!editingBus && totalAsientosCalculados > 50)}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? "Guardando..." : "Guardar Unidad"}
                 </button>
