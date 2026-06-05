@@ -119,4 +119,81 @@ export function generateBoletosReporte(boletos: any[], titulo: string): void {
   doc.save('boletos-' + formatearFechaArchivo() + '.pdf')
 }
 
+export function generateHojaRutaPDF(hojaRuta: any): void {
+  const fechaInicio = new Date(hojaRuta.fechaInicio)
+  const fechaInicioStr = fechaInicio.toLocaleDateString('es-EC')
+  const subtitulo = 'Tipo: ' + hojaRuta.tipo + ' | Inicio: ' + fechaInicioStr
+  const { doc, startY } = crearDocumentoBase('Hoja de Ruta', subtitulo)
+  const rutas = hojaRuta.rutas || []
+  const oficinistaNombre =
+    hojaRuta.oficinista?.nombre || hojaRuta.oficinistaNombre || hojaRuta.oficinista || '-'
+
+  let currentY = startY
+
+  doc.setFontSize(10)
+  doc.setTextColor('#111827')
+
+  doc.setFont('helvetica', 'bold')
+  doc.text('Oficinista:', 14, currentY)
+  doc.setFont('helvetica', 'normal')
+  doc.text(String(oficinistaNombre), 38, currentY)
+
+  currentY += 6
+  doc.setFont('helvetica', 'bold')
+  doc.text('Estado:', 14, currentY)
+  doc.setFont('helvetica', 'normal')
+  doc.text(hojaRuta.habilitada ? 'Activa' : 'Inactiva', 31, currentY)
+
+  currentY += 6
+  doc.setFont('helvetica', 'bold')
+  doc.text('Total rutas:', 14, currentY)
+  doc.setFont('helvetica', 'normal')
+  doc.text(String(rutas.length), 39, currentY)
+
+  currentY += 8
+
+  if (rutas.length === 0) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    doc.setTextColor('#6B7280')
+    doc.text('No hay rutas asignadas en esta hoja de ruta', 105, currentY + 16, {
+      align: 'center',
+    })
+  } else {
+    autoTable(doc, {
+      startY: currentY,
+      head: [['#', 'Fecha', 'Origen', 'Destino', 'Hora', 'Bus', 'Placa', 'Estado']],
+      body: rutas.map((ruta: any, index: number) => {
+        const fecha = new Date(ruta.fecha)
+        const fechaStr = fecha.toLocaleDateString('es-EC')
+
+        return [
+          index + 1,
+          fechaStr,
+          ruta.frecuencia?.ciudadOrigen || '-',
+          ruta.frecuencia?.ciudadDestino || '-',
+          ruta.frecuencia?.hora || '-',
+          'Bus #' + (ruta.bus?.numero || '-'),
+          ruta.bus?.placa || '-',
+          ruta.estado || '-',
+        ]
+      }),
+      headStyles: { fillColor: [5, 150, 105] },
+      styles: { fontSize: 8, cellPadding: 3 },
+      alternateRowStyles: { fillColor: [236, 253, 245] },
+    })
+  }
+
+  const pageCount = doc.getNumberOfPages()
+  for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+    doc.setPage(pageNumber)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor('#9CA3AF')
+    doc.text(`Página ${pageNumber} de ${pageCount}`, 105, 287, { align: 'center' })
+  }
+
+  doc.save('hoja-ruta-' + formatearFechaArchivo() + '.pdf')
+}
+
 export { crearDocumentoBase, formatearFechaArchivo }
