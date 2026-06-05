@@ -6,10 +6,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const rol = searchParams.get("rol");
 
-    const where: any = {};
-    if (rol) {
-      where.rol = { nombre: rol };
-    }
+    const where: any = { activo: true };
+if (rol) {
+  where.rol = { nombre: rol };
+}
 
     const [usuarios, roles] = await Promise.all([
       prisma.usuario.findMany({
@@ -158,18 +158,19 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    
+
     if (!id) {
       return NextResponse.json({ error: "id es requerido" }, { status: 400 });
     }
 
-    await prisma.usuario.update({
-      where: { id },
-      data: { activo: false },
-    });
-
-    return NextResponse.json({ mensaje: "Usuario desactivado" });
+    
+await prisma.usuario.update({
+  where: { id },
+  data: { activo: false },
+});
+    return NextResponse.json({ mensaje: "Usuario eliminado" });
   } catch (error) {
+    console.error("DELETE error:", error);
     return NextResponse.json({ error: "Error al eliminar" }, { status: 500 });
   }
 }
