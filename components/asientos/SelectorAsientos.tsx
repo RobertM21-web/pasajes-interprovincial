@@ -223,7 +223,7 @@ export default function SelectorAsientos({
 
       <div className="flex justify-center mb-6">
         <div className="w-32 h-10 bg-gray-300 rounded-t-3xl flex items-center justify-center text-sm font-medium text-gray-700">
-          Conductor
+          Chofer
         </div>
       </div>
 
@@ -346,18 +346,18 @@ export default function SelectorAsientos({
               placeholder="Nombre completo"
             />
             <label className="block text-xs font-semibold text-gray-600" htmlFor="pasajeroCedula">
-              Cedula del pasajero
+              Cédula del pasajero
             </label>
             <input
               id="pasajeroCedula"
               value={pasajeroCedula}
               onChange={(event) => setPasajeroCedula(event.target.value)}
               className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
-              placeholder="Cedula o identificacion"
+              placeholder="Cédula o identificación"
               maxLength={13}
             />
             <label className="block text-xs font-semibold text-gray-600" htmlFor="metodoPago">
-              Metodo de pago
+              Método de pago
             </label>
             <select
               id="metodoPago"
@@ -366,7 +366,7 @@ export default function SelectorAsientos({
               className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
             >
               <option value="TRANSFERENCIA">Transferencia</option>
-              <option value="DEPOSITO">Deposito</option>
+              <option value="DEPOSITO">Depósito</option>
               <option value="PAYPAL">PayPal</option>
             </select>
             {(metodoPago === "TRANSFERENCIA" || metodoPago === "DEPOSITO") && (
@@ -398,7 +398,7 @@ export default function SelectorAsientos({
             {submitting ? "Procesando..." : "Continuar compra"}
           </button>
           <p className="mt-2 text-center text-[11px] text-gray-500">
-            El oficinista revisara el comprobante antes de aprobar la compra.
+            El oficinista revisará el comprobante antes de aprobar la compra.
           </p>
         </div>
       )}

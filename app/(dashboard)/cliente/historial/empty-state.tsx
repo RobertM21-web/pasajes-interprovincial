@@ -11,7 +11,7 @@ interface EmptyStateProps {
 
 export function EmptyState({
   titulo = "Sin boletos aún",
-  descripcion = "No tienes boletos en tu historial. ¡Compra tu pasaje ahora!",
+  descripcion = "No tienes boletos en tu historial. ¡Compra tu boleto ahora!",
   showIcon = true,
 }: EmptyStateProps) {
   return (
@@ -50,7 +50,7 @@ export function EmptyState({
           transition-colors duration-200
         `}
       >
-        Buscar pasaje
+        Buscar boleto
       </a>
     </div>
   );

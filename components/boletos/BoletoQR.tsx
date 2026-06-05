@@ -222,10 +222,10 @@ export function BoletoQR({ boleto, configuracion }: BoletoQRProps) {
           )}
         </div>
         <p className="text-xs text-gray-500 font-mono tracking-widest text-center">
-          TICKET: {boleto.id.split('-')[0].toUpperCase()}
+          BOLETO: {boleto.id.split('-')[0].toUpperCase()}
         </p>
         <p className="text-xs text-gray-400 mt-2 text-center max-w-[250px]">
-          Presente este código al conductor o azafata al momento de abordar la unidad
+          Presente este código al chofer o azafata al momento de abordar la unidad
         </p>
       </div>
     </div>

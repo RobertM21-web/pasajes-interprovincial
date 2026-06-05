@@ -194,7 +194,7 @@ export default function LoginPage() {
                     <Bus className="h-4.5 w-4.5 text-white absolute bottom-[2px] animate-bus-drive" />
                   </div>
                   <span className="text-[10px] font-bold tracking-wider uppercase text-blue-200 mt-1 animate-pulse">
-                    Iniciando viaje...
+                    Iniciando ruta...
                   </span>
                 </div>
               ) : (
@@ -208,7 +208,7 @@ export default function LoginPage() {
           {/* Enlace para registarse como cliente*/}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
-              ¿Aún no estas registardo?{" "}
+              ¿Aún no estás registrado?{" "}
               <button
                 onClick={() => router.push("/register")}
                 className="text-blue-600 hover:text-blue-800 font-semibold transition hover:underline"

@@ -107,7 +107,7 @@ export default async function BoletoDetailPage({
       {boleto.estado === 'CANCELADO' && (
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl shadow-sm">
           <h3 className="text-red-800 font-bold text-lg">Boleto Cancelado</h3>
-          <p className="text-red-600 mt-1">Este boleto ha sido cancelado y ya no es válido para viajar. Por favor, comunícate con soporte si consideras que es un error.</p>
+          <p className="text-red-600 mt-1">Este boleto ha sido cancelado y ya no es válido para abordar. Por favor, comunícate con soporte si consideras que es un error.</p>
         </div>
       )}
 
@@ -120,7 +120,7 @@ export default async function BoletoDetailPage({
 
         {/* Resumen adicional */}
         <div className="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 order-1 lg:order-2">
-          <h2 className="text-2xl font-bold mb-6 text-gray-900">Detalles del Viaje</h2>
+          <h2 className="text-2xl font-bold mb-6 text-gray-900">Detalles de la Ruta</h2>
           
           <div className="space-y-6">
             <div className="pb-5 border-b border-gray-100 grid grid-cols-2 gap-4">

@@ -107,7 +107,7 @@ export default function Sidebar({ rol, navItems, isOpen, onClose }: SidebarProps
         {/* Footer del sidebar */}
         <div className="px-5 py-4 border-t border-white/10">
           <p className="text-xs text-white/40">
-            Sistema de Pasajes v0.0.1
+            Sistema de Boletos v0.0.1
           </p>
         </div>
       </aside>

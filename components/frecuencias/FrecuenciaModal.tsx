@@ -76,7 +76,7 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
     
     if (!formData.esDirecta) {
       if (formData.paradas.length === 0) {
-        newErrors.global = 'Debe agregar al menos una parada si el viaje no es directo.';
+        newErrors.global = 'Debe agregar al menos una parada si la ruta no es directa.';
       }
       formData.paradas.forEach((parada, index) => {
         if (!parada.ciudad.trim()) newErrors[`parada_${index}_ciudad`] = 'Requerido';
@@ -279,7 +279,7 @@ export default function FrecuenciaModal({ isOpen, onClose, frecuencia, onSuccess
                   <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform peer-checked:translate-x-5 shadow-sm"></div>
                 </div>
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
-                  Viaje Directo
+                  Ruta Directa
                 </span>
               </label>
 

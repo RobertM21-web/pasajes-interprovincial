@@ -41,7 +41,7 @@ export const oficinistaNavItems: NavItem[] = [
 
 export const clienteNavItems: NavItem[] = [
   { label: "Inicio", href: "/cliente", icon: LayoutDashboard },
-  { label: "Comprar Pasajes", href: "/cliente/compra-online", icon: Search },
+  { label: "Comprar Boletos", href: "/cliente/compra-online", icon: Search },
   { label: "Historial", href: "/cliente/historial", icon: History },
 ];
 

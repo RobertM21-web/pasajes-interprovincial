@@ -297,7 +297,7 @@ export default function BusesAdminPage() {
 
   // Eliminar una categoría de un bus (DELETE /api/admin/buses/[id]/categorias/[id])
   const handleDeleteCategory = async (busId: string, catId: string) => {
-    if (!confirm("¿Seguro de que deseas eliminar esta categoría? Se eliminarán los asientos asociados.")) return;
+    if (!confirm("¿Estás seguro de eliminar esta categoría? Se eliminarán los asientos asociados.")) return;
     setError("");
     setSuccess("");
 
@@ -357,7 +357,7 @@ export default function BusesAdminPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600 mb-4">
               <AlertCircle className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-bold text-slate-950">¿Eliminar esta Unidad?</h3>
+            <h3 className="text-lg font-bold text-slate-950">¿Estás seguro de eliminar?</h3>
             <p className="text-sm text-slate-500 mt-2 leading-relaxed">
               Esta acción es irreversible. El sistema verificará si hay rutas activas para aplicar un borrado lógico (desactivación) o físico de manera automática.
             </p>
@@ -535,7 +535,7 @@ export default function BusesAdminPage() {
               <div className="bg-slate-950 rounded-2xl border border-slate-800 p-4 relative">
                 {/* Cabina del Conductor */}
                 <div className="h-10 border-b border-dashed border-slate-800 mb-6 flex items-center justify-between px-3 text-slate-500 text-[10px] font-bold uppercase">
-                  <span>Conductor </span>
+                  <span>Chofer </span>
                   <span>Puerta </span>
                 </div>
 
@@ -620,7 +620,7 @@ export default function BusesAdminPage() {
                   <h4 className="text-xs font-bold text-blue-600 uppercase tracking-widest border-b border-slate-100 pb-1">Parámetros Vehiculares</h4>
                   
                   <div className="space-y-1.5">
-                    <label htmlFor="bus-numero" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Disco / Registro Nro. *</label>
+                    <label htmlFor="bus-numero" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Número de Disco / Registro *</label>
                     <input
                       id="bus-numero"
                       type="text"
@@ -797,7 +797,7 @@ export default function BusesAdminPage() {
 
                         {/* Input de Cantidad */}
                         <div className="sm:col-span-3 space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nro. Asientos</label>
+                           <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Número de Asientos</label>
                           <input 
                             type="number" 
                             required 
@@ -895,7 +895,7 @@ export default function BusesAdminPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Nro. de Asientos *</label>
+                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Número de Asientos *</label>
                   <input 
                     type="number" 
                     required 

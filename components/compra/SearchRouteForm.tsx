@@ -52,7 +52,7 @@ export default function SearchRouteForm({ onSearch }: SearchRouteFormProps) {
         onClick={handleSearchClick}
         className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl p-3 font-semibold transition-all shadow-lg shadow-amber-200"
       >
-        Buscar viajes
+        Buscar rutas
       </button>
     </div>
   );

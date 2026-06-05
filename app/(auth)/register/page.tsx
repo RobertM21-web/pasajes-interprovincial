@@ -259,7 +259,7 @@ const fuerza = obtenerFuerzaPassword(password);
               Únete como Pasajero
             </h2>
             <p className="mt-3 text-blue-100 text-sm leading-relaxed">
-              Crea tu cuenta personal en pocos pasos y accede a una nueva experiencia de viaje interprovincial.
+              Crea tu cuenta personal en pocos pasos y accede a una nueva experiencia de ruta interprovincial.
             </p>
           </div>
 
@@ -290,7 +290,7 @@ const fuerza = obtenerFuerzaPassword(password);
               </div>
               <div>
                 <h4 className="font-semibold text-sm">Boletos Digitales con QR</h4>
-                <p className="text-xs text-blue-200 mt-1">Recibe tus pasajes en formato digital. Súbete al bus escaneando tu código desde el celular.</p>
+                <p className="text-xs text-blue-200 mt-1">Recibe tus boletos en formato digital. Súbete al bus escaneando tu código desde el celular.</p>
               </div>
             </div>
           </div>
@@ -316,7 +316,7 @@ const fuerza = obtenerFuerzaPassword(password);
               Crear Cuenta
             </h1>
             <p className="text-sm text-gray-500 mt-2">
-              Regístrate para comprar pasajes en línea y gestionar tus viajes de manera inteligente.
+              Regístrate para comprar boletos en línea y gestionar tus rutas de manera inteligente.
             </p>
           </div>
 
@@ -389,7 +389,7 @@ const fuerza = obtenerFuerzaPassword(password);
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label htmlFor="telefono" className="block text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Celular de Contacto
+                  Teléfono Celular de Contacto
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">

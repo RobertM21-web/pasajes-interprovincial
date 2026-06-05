@@ -178,7 +178,7 @@ export default async function HojaRutaPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Hoja de ruta sin asignar</h3>
               <p className="text-gray-500 max-w-sm mx-auto mb-6">
-                Tu hoja de ruta está lista, pero aún no se le han asignado viajes. Contacta con el administrador o asigna las rutas.
+                Tu hoja de ruta está lista, pero aún no se le han asignado rutas. Contacta con el administrador o asigna las rutas.
               </p>
               <HabilitarRutaModal hojaRuta={{
                 id: hojaRutaActiva.id,

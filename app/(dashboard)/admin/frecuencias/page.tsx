@@ -93,7 +93,7 @@ export default function FrecuenciasPage() {
               Gestión de Frecuencias
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Administra los horarios, rutas y paradas de los viajes interprovinciales.
+              Administra las frecuencias, rutas y paradas de las rutas interprovinciales.
             </p>
           </div>
           
@@ -126,7 +126,7 @@ export default function FrecuenciasPage() {
                     Hora de Salida
                   </th>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Tipo de Viaje
+                    Tipo de Ruta
                   </th>
                   <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Estado
@@ -178,7 +178,7 @@ export default function FrecuenciasPage() {
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
                             : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20'
                         }`}>
-                          {frecuencia.esDirecta ? 'Viaje Directo' : 'Con Paradas'}
+                          {frecuencia.esDirecta ? 'Ruta Directa' : 'Con Paradas'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -239,8 +239,8 @@ export default function FrecuenciasPage() {
           isOpen={isConfirmOpen}
           onClose={() => setIsConfirmOpen(false)}
           onConfirm={confirmDelete}
-          title="Eliminar Frecuencia"
-          description={`¿Estás seguro de que deseas eliminar la frecuencia de ${frecuenciaToDelete?.ciudadOrigen} a ${frecuenciaToDelete?.ciudadDestino}? Esta acción no se puede deshacer y borrará las paradas intermedias asociadas.`}
+          title="¿Estás seguro de eliminar?"
+          description={`¿Estás seguro de eliminar la frecuencia de ${frecuenciaToDelete?.ciudadOrigen} a ${frecuenciaToDelete?.ciudadDestino}? Esta acción no se puede deshacer y borrará las paradas intermedias asociadas.`}
         />
         
         {/* Configuración del Toast de Radix UI */}

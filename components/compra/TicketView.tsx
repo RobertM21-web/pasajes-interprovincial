@@ -12,13 +12,13 @@ export default function TicketView({ selectedRouteData }: TicketViewProps) {
       <div className="absolute -right-3 top-1/2 w-6 h-6 bg-gray-100 rounded-full"></div>
 
       <h3 className="text-2xl font-bold text-center text-black mb-6 uppercase tracking-wider">
-        Boleto de Viaje
+        Boleto de Ruta
       </h3>
 
       <div className="space-y-3 text-gray-800 border-t border-b border-gray-100 py-4">
         <div className="flex justify-between">
           <span className="text-gray-500 font-medium">Código:</span>
-          <span className="font-bold text-black">TICKET-2026-{selectedRouteData.id.slice(-4).toUpperCase()}</span>
+          <span className="font-bold text-black">BOLETO-2026-{selectedRouteData.id.slice(-4).toUpperCase()}</span>
         </div>
 
         <div className="flex justify-between">
