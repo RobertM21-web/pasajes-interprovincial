@@ -278,34 +278,76 @@ export default function ConfigCooperativaPage() {
   const previewLogo = logoPreview || form.logoUrl;
   const previewName = form.nombreCooperativa || "Nombre de la cooperativa";
 
-  async function handleSubmit(e: React.FormEvent) {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({});
-    const result = configuracionSchema.safeParse(form);
-    if (!result.success) {
-      const fieldErrors: Partial<Record<keyof ConfigForm, string>> = {};
-      for (const [key, msgs] of Object.entries(result.error.flatten().fieldErrors)) {
-        fieldErrors[key as keyof ConfigForm] = (msgs as string[])[0];
-      }
+
+    const parsed = configuracionSchema.safeParse(form);
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string> = {};
+      parsed.error.issues.forEach((issue) => {
+        const key = issue.path[0];
+        if (typeof key === "string" && !fieldErrors[key]) {
+          fieldErrors[key] = issue.message;
+        }
+      });
       setErrors(fieldErrors);
+      setToast({ type: "error", message: "Corrige los campos del formulario." });
       return;
     }
+
+    setErrors({});
     setSaving(true);
+
     try {
+      let logoToSave = form.logoUrl;
+
+      if (logoFile) {
+        logoToSave = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+          reader.onerror = () => reject(new Error("No se pudo leer el logo."));
+          reader.readAsDataURL(logoFile);
+        });
+      }
+
+      const payload = {
+        ...parsed.data,
+        logoUrl: logoToSave || "",
+      };
+
       const res = await fetch("/api/configuracion", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(result.data),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
+
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Error desconocido");
-      setToast({ type: "success", message: "¡Configuración guardada correctamente!" });
-    } catch (err: unknown) {
-      setToast({ type: "error", message: err instanceof Error ? err.message : "Error al guardar" });
+
+      if (!res.ok) {
+        throw new Error(json?.error || "No se pudo guardar la configuración.");
+      }
+
+      setForm({
+        ...EMPTY,
+        ...payload,
+      });
+
+      if (logoToSave) {
+        setLogoPreview(logoToSave);
+      }
+
+      setToast({ type: "success", message: "Configuración guardada correctamente." });
+    } catch (error) {
+      setToast({
+        type: "error",
+        message: error instanceof Error ? error.message : "Ocurrió un error al guardar.",
+      });
     } finally {
       setSaving(false);
     }
-  }
+  };
 
   if (loading) {
     return (
