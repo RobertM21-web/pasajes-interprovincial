@@ -245,20 +245,25 @@ export default function SelectorAsientos({
               const isSelected = selectedSeat === seat.id;
               const nombreCat = seat.categoria?.toLowerCase() || "";
               
-              const isVip = nombreCat.includes("vip");
-              const isDiscapacidad = nombreCat.includes("discapacidad") || nombreCat.includes("conci");
+              const cat = seat.categoria?.toUpperCase() || "";
 
-              let seatStyle = "bg-blue-50 text-blue-800 border border-blue-200 hover:bg-amber-50";
+                let seatStyle = "";
 
-              if (seat.ocupado) {
-                seatStyle = "bg-red-200 text-red-700 cursor-not-allowed";
-              } else if (isSelected) {
-                seatStyle = "bg-amber-500 text-white scale-105";
-              } else if (isVip) {
-                seatStyle = "bg-purple-100 text-purple-800 border border-purple-300 hover:bg-purple-200";
-              } else if (isDiscapacidad) {
-                seatStyle = "bg-green-100 text-green-800 border border-green-300 hover:bg-green-200";
-              }
+                if (seat.ocupado) {
+                  seatStyle = "bg-red-400 text-white cursor-not-allowed opacity-70";
+                } else if (isSelected) {
+                  seatStyle = "bg-gray-500 text-white scale-105 ring-2 ring-gray-700";
+                } else if (cat.includes("VIP")) {
+                  seatStyle = "bg-yellow-400 text-yellow-900 border border-yellow-500 hover:bg-yellow-300";
+                } else if (cat.includes("DISCAPACIDAD")) {
+                  seatStyle = "bg-blue-400 text-white border border-blue-500 hover:bg-blue-300";
+                } else if (cat.includes("TERCERA")) {
+                  seatStyle = "bg-purple-400 text-white border border-purple-500 hover:bg-purple-300";
+                } else if (cat.includes("MENOR")) {
+                  seatStyle = "bg-orange-400 text-white border border-orange-500 hover:bg-orange-300";
+                } else {
+                  seatStyle = "bg-green-400 text-white border border-green-500 hover:bg-green-300";
+                }
 
               return (
                 <button
@@ -269,8 +274,18 @@ export default function SelectorAsientos({
                 >
                   <div className="flex items-center gap-0.5">
                     <span>{seat.etiqueta}</span>
-                    {isVip && <span className="text-[7px] px-0.5 bg-purple-700 text-white rounded font-extrabold">V</span>}
-                    {isDiscapacidad && <span className="text-[7px] px-0.5 bg-green-700 text-white rounded font-extrabold">D</span>}
+                    {cat.includes("VIP") && (
+                      <span className="text-[7px] px-0.5 bg-yellow-700 text-white rounded font-extrabold">V</span>
+                    )}
+                    {cat.includes("DISCAPACIDAD") && (
+                      <span className="text-[7px] px-0.5 bg-blue-700 text-white rounded font-extrabold">D</span>
+                    )}
+                    {cat.includes("TERCERA") && (
+                      <span className="text-[7px] px-0.5 bg-purple-700 text-white rounded font-extrabold">T</span>
+                    )}
+                    {cat.includes("MENOR") && (
+                      <span className="text-[7px] px-0.5 bg-orange-700 text-white rounded font-extrabold">M</span>
+                    )}
                   </div>
                   <span className="text-[9px] font-normal opacity-85">
                     ${Number(seat.precioBase).toFixed(2)}
@@ -299,27 +314,35 @@ export default function SelectorAsientos({
 
       {/* Leyenda Dinámica */}
       <div className="flex flex-wrap gap-4 mt-6 justify-center text-xs text-gray-600">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-blue-50 border border-blue-200" />
-          Normal
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-purple-100 border border-purple-200" />
-          VIP
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-green-100 border border-green-200" />
-          Discapacidad
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-amber-500" />
-          Seleccionado
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-red-200" />
-          Ocupado
-        </div>
-      </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-green-400" />
+    Normal
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-yellow-400" />
+    VIP
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-blue-400" />
+    Discapacidad
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-purple-400" />
+    Tercera Edad
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-orange-400" />
+    Menor de Edad
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-gray-500" />
+    Seleccionado
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-red-400" />
+    Ocupado
+  </div>
+</div>
 
       {/* Panel Informativo de Selección */}
       {selectedSeatData && (
