@@ -35,6 +35,25 @@ function normalizeTipoPasajero(value?: string): string {
   }
 }
 
+function formatCategoria(categoria?: string): string {
+  if (!categoria) return "Normal";
+
+  switch (categoria.toUpperCase()) {
+    case "NORMAL":
+      return "Normal";
+    case "VIP":
+      return "VIP";
+    case "DISCAPACIDAD":
+      return "Discapacidad";
+    case "TERCERA_EDAD":
+      return "Tercera Edad";
+    case "MENOR_EDAD":
+      return "Menor de Edad";
+    default:
+      return categoria;
+  }
+}
+
 export default function SelectorAsientos({
   rutaId,
   tipoPasajero,
@@ -270,7 +289,8 @@ export default function SelectorAsientos({
                   key={seat.id}
                   disabled={seat.ocupado}
                   onClick={() => setSelectedSeat(seat.id)}
-                  className={`h-12 w-full rounded-xl font-bold text-xs flex flex-col items-center justify-center transition-all ${seatStyle}`}
+                  className={`group relative h-12 w-full rounded-xl font-bold text-xs flex flex-col items-center justify-center transition-all ${seatStyle}`}
+                  
                 >
                   <div className="flex items-center gap-0.5">
                     <span>{seat.etiqueta}</span>
@@ -290,6 +310,13 @@ export default function SelectorAsientos({
                   <span className="text-[9px] font-normal opacity-85">
                     ${Number(seat.precioBase).toFixed(2)}
                   </span>
+                  {!seat.ocupado && (
+                    <div className="pointer-events-none absolute -top-16 left-1/2 z-20 hidden w-32 -translate-x-1/2 rounded-lg bg-gray-900 px-2 py-1.5 text-[10px] font-medium text-white shadow-lg group-hover:block">
+                      <p className="font-bold">{seat.etiqueta}</p>
+                      <p>{formatCategoria(seat.categoria)}</p>
+                      <p>${Number(seat.precioBase).toFixed(2)}</p>
+                    </div>
+                  )}
                 </button>
               );
             };
