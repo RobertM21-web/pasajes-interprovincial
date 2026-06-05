@@ -23,6 +23,7 @@ import { EmptyState } from "./empty-state";
 import { EstadoFilter } from "./estado-filter";
 import { Pagination } from "./pagination";
 import { BoletoListSkeleton } from "./skeleton";
+import ExportPDFButton from "@/components/ui/ExportPDFButton";
 
 /**
  * Props que recibe la página del Next.js router
@@ -185,11 +186,22 @@ export default function HistorialPage() {
         ) : (
           <>
             {/* Contador */}
-            <div className="mb-6">
+            <div className="mb-6 flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Mostrando <span className="font-semibold">{boletos.length}</span> de{" "}
-                <span className="font-semibold">{paginacion?.total || 0}</span> boletos
+                Mostrando{" "}
+                <span className="font-semibold">{boletos.length}</span> de{" "}
+                <span className="font-semibold">{paginacion?.total || 0}</span>{" "}
+                boletos
               </p>
+              {boletos.length > 0 && (
+                <ExportPDFButton
+                  tipo="boletos"
+                  data={boletos}
+                  label="Descargar historial"
+                  titulo="Mi Historial de Boletos"
+                  variant="outline"
+                />
+              )}
             </div>
 
             {/* Grid de tarjetas */}
