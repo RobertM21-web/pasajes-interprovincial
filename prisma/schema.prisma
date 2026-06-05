@@ -230,7 +230,7 @@ model Ruta {
   estado       String   @default("HABILITADA") @db.NVarChar(20) // HABILITADA, EN_CURSO, COMPLETADA, CANCELADA
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-
+choferId     String?  @map("chofer_id")
   // Relaciones
   frecuencia Frecuencia @relation(fields: [frecuenciaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   bus        Bus        @relation(fields: [busId], references: [id], onDelete: NoAction, onUpdate: NoAction)
