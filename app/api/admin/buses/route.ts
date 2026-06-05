@@ -1,24 +1,41 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { validarPlacaEcuador } from "@/lib/validaciones";
 
 // Schema para crear bus con sus categorías
 const busCreateSchema = z.object({
   numero: z.string().min(1, "Número de bus obligatorio"),
-  placa: z.string().min(1, "Placa obligatoria"),
-  marcaChasis: z.string().min(1, "Marca del chasis obligatoria"),
-  marcaCarroceria: z.string().min(1, "Marca de carrocería obligatoria"),
+  placa: z
+    .string()
+    .min(1, "Placa obligatoria")
+    .transform((v) => v.toUpperCase().trim())
+    .refine(validarPlacaEcuador, {
+      message: "Formato de placa inválido. Use: ABC-123 o ABC-1234",
+    }),
+  marcaChasis: z.string().min(2, "Marca del chasis obligatoria"),
+  marcaCarroceria: z.string().min(2, "Marca de carrocería obligatoria"),
   fotografiaUrl: z.string().url().optional().or(z.literal("")),
-  totalAsientos: z.number().int().positive("Debe tener al menos 1 asiento"),
+  totalAsientos: z
+    .number()
+    .int()
+    .min(1, "Debe tener al menos 1 asiento")
+    .max(50, "Máximo 50 asientos permitidos por bus"),
   enTerminal: z.boolean().default(true),
-  categorias: z.array(
-    z.object({
-      nombre: z.string().min(1, "Nombre de categoría obligatorio"),
-      precioBase: z.number().positive("Precio debe ser positivo"),
-      cantidad: z.number().int().positive("Cantidad debe ser positiva"),
-      descripcion: z.string().optional(),
-    })
-  ).min(1, "Debe tener al menos una categoría"),
+  categorias: z
+    .array(
+      z.object({
+        nombre: z.string().min(1, "Nombre de categoría obligatorio"),
+        precioBase: z.number().positive("Precio debe ser positivo"),
+        cantidad: z
+          .number()
+          .int()
+          .min(1, "Mínimo 1 asiento")
+          .max(50, "Máximo 50 asientos permitidos"),
+        descripcion: z.string().optional(),
+      })
+    )
+    .min(1, "Debe tener al menos una categoría"),
 });
 
 // GET - Listar todos los buses con sus categorías
