@@ -6,12 +6,11 @@ import {
   Plus, 
   Edit2, 
   Trash2, 
+  Eye,
   CheckCircle2, 
   AlertCircle, 
   X,
-  Users,
-  Info,
-  Eye
+  Users
 } from "lucide-react";
 
 interface Asiento {
@@ -55,10 +54,9 @@ export default function BusesAdminPage() {
   const [isBusModalOpen, setIsBusModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingBus, setViewingBus] = useState<BusData | null>(null);
   const [busToDelete, setBusToDelete] = useState<string | null>(null);
-
-  // Vista activa de plano de asientos
-  const [selectedBusMap, setSelectedBusMap] = useState<BusData | null>(null);
 
   // Formulario de Bus (Crear / Editar básico)
   const [editingBus, setEditingBus] = useState<BusData | null>(null);
@@ -67,6 +65,9 @@ export default function BusesAdminPage() {
   const [marcaChasis, setMarcaChasis] = useState("");
   const [marcaCarroceria, setMarcaCarroceria] = useState("");
   const [fotografiaUrl, setFotografiaUrl] = useState("");
+  const [fotografiaPreview, setFotografiaPreview] = useState("");
+  const [fotografiaArchivo, setFotografiaArchivo] = useState<File | null>(null);
+  const [totalAsientos, setTotalAsientos] = useState("30");
   const [enTerminal, setEnTerminal] = useState(true);
   const [activo, setActivo] = useState(true);
 
@@ -77,14 +78,56 @@ export default function BusesAdminPage() {
 
   // Formulario para añadir una categoría a un bus ya existente
   const [catNombre, setCatNombre] = useState("");
-  const [catPrecio, setCatPrecio] = useState(5.0);
+  const [catPorcentaje, setCatPorcentaje] = useState(10);
   const [catCantidad, setCatCantidad] = useState(10);
   const [catDescripcion, setCatDescripcion] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
 
-  // Calcula automáticamente el total de asientos sumando las categorías creadas
-  const totalAsientosCalculados = categoriasNuevaFlota.reduce((acc, cat) => acc + Number(cat.cantidad), 0);
+  const limpiarEntero = (valor: string) => valor.replace(/\D/g, "");
+  const totalAsientosNumero = Number(totalAsientos);
+
+  const distribuirAsientosPorCategoria = (categorias: Categoria[], total: number) => {
+    const base = Math.floor(total / categorias.length);
+    const sobrantes = total % categorias.length;
+
+    return categorias.map((cat, idx) => ({
+      ...cat,
+      cantidad: base + (idx < sobrantes ? 1 : 0)
+    }));
+  };
+
+  const handleFotografiaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Solo se permite subir una imagen del bus.");
+      e.target.value = "";
+      return;
+    }
+
+    setFotografiaArchivo(file);
+    setFotografiaUrl("");
+    setFotografiaPreview(URL.createObjectURL(file));
+  };
+
+  const subirFotografiaSiExiste = async () => {
+    if (!fotografiaArchivo) return fotografiaUrl.trim();
+
+    const formData = new FormData();
+    formData.append("file", fotografiaArchivo);
+
+    const res = await fetch("/api/admin/buses/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "No se pudo subir la imagen del bus.");
+
+    return data.url as string;
+  };
 
   // Cargar lista completa de buses de SQL Server (GET) apuntando a la ruta real /api/admin/buses
   const cargarBuses = async () => {
@@ -97,23 +140,6 @@ export default function BusesAdminPage() {
     } catch (err: any) {
       console.warn("API de buses no detectada o base de datos vacía. Usando datos locales de contingencia.");
       // Fallback seguro de desarrollo para que el Canvas siga viéndose espectacular
-      setBuses([
-        {
-          id: "b499851a-4ebe-4c3a-ae51-8874109e01de",
-          numero: "01",
-          placa: "TAA-0101",
-          marcaChasis: "Mercedes-Benz",
-          marcaCarroceria: "Marcopolo",
-          totalAsientos: 40,
-          activo: true,
-          enTerminal: true,
-          categorias: [
-            { id: "c1", nombre: "Normal", precioBase: 5.0, cantidad: 30, descripcion: "Asiento estándar" },
-            { id: "c2", nombre: "VIP", precioBase: 8.5, cantidad: 8, descripcion: "Reclinables premium" },
-            { id: "c3", nombre: "Discapacidad", precioBase: 5.0, cantidad: 2, descripcion: "Acceso prioritario" }
-          ]
-        }
-      ]);
     } finally {
       setLoading(false);
     }
@@ -142,6 +168,11 @@ export default function BusesAdminPage() {
     setCategoriasNuevaFlota(updated);
   };
 
+  const handleOpenViewModal = (bus: BusData) => {
+    setViewingBus(bus);
+    setIsViewModalOpen(true);
+  };
+
   // Abrir Modal de Creación
   const handleOpenCreateModal = () => {
     setEditingBus(null);
@@ -150,6 +181,9 @@ export default function BusesAdminPage() {
     setMarcaChasis("");
     setMarcaCarroceria("");
     setFotografiaUrl("");
+    setFotografiaPreview("");
+    setFotografiaArchivo(null);
+    setTotalAsientos("30");
     setEnTerminal(true);
     setActivo(true);
     setCategoriasNuevaFlota([
@@ -167,8 +201,16 @@ export default function BusesAdminPage() {
     setMarcaChasis(bus.marcaChasis);
     setMarcaCarroceria(bus.marcaCarroceria);
     setFotografiaUrl(bus.fotografiaUrl || "");
+    setFotografiaPreview(bus.fotografiaUrl || "");
+    setFotografiaArchivo(null);
+    setTotalAsientos(String(bus.totalAsientos || ""));
     setEnTerminal(bus.enTerminal);
     setActivo(bus.activo);
+    setCategoriasNuevaFlota(
+      bus.categorias.length > 0
+        ? bus.categorias.map((cat) => ({ ...cat, precioBase: Number(cat.precioBase) }))
+        : [{ nombre: "Normal", precioBase: 5.0, cantidad: bus.totalAsientos || 30, descripcion: "Asiento estándar de la unidad" }]
+    );
     setError("");
     setIsBusModalOpen(true);
   };
@@ -187,7 +229,30 @@ export default function BusesAdminPage() {
       return;
     }
 
+    if (!Number.isInteger(totalAsientosNumero) || totalAsientosNumero <= 0) {
+      setError("La cantidad total de asientos debe ser un número entero mayor a cero.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (totalAsientosNumero < categoriasNuevaFlota.length) {
+      setError("La cantidad total de asientos debe cubrir al menos un asiento por categoría.");
+      setSubmitting(false);
+      return;
+    }
+
+    const totalAsientosCategorias = categoriasNuevaFlota.reduce((sum, cat) => sum + Number(cat.cantidad), 0);
+    if (totalAsientosCategorias !== totalAsientosNumero) {
+      setError(`La suma de asientos de las categorías (${totalAsientosCategorias}) no coincide con el total de asientos del bus (${totalAsientosNumero}).`);
+      setSubmitting(false);
+      return;
+    }
+
+    const categoriasNormalizadas = categoriasNuevaFlota;
+
     try {
+      const fotografiaFinalUrl = await subirFotografiaSiExiste();
+
       if (editingBus) {
         // ACTUALIZACIÓN DE BUS (PUT) apuntando a la API real de Enrique
         const payload = {
@@ -195,7 +260,8 @@ export default function BusesAdminPage() {
           placa: placa.toUpperCase().trim(),
           marcaChasis: marcaChasis.trim(),
           marcaCarroceria: marcaCarroceria.trim(),
-          fotografiaUrl: fotografiaUrl.trim(),
+          fotografiaUrl: fotografiaFinalUrl,
+          totalAsientos: totalAsientosNumero,
           enTerminal,
           activo
         };
@@ -211,6 +277,46 @@ export default function BusesAdminPage() {
           throw new Error(data.error || "Ocurrió un error al actualizar el bus.");
         }
 
+        const categoriasEliminadas = editingBus.categorias.filter(
+          (cat) => cat.id && !categoriasNormalizadas.some((categoriaForm) => categoriaForm.id === cat.id)
+        );
+
+        const categoryResponses = await Promise.all([
+          ...categoriasEliminadas.map((cat) =>
+            fetch(`/api/admin/buses/${editingBus.id}/categorias/${cat.id}`, { method: "DELETE" })
+          ),
+          ...categoriasNormalizadas.map((cat) => {
+            if (cat.id) {
+              return fetch(`/api/admin/buses/${editingBus.id}/categorias/${cat.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  nombre: cat.nombre.trim(),
+                  precioBase: Number(cat.precioBase),
+                  descripcion: cat.descripcion?.trim() || undefined
+                })
+              });
+            }
+
+            return fetch(`/api/admin/buses/${editingBus.id}/categorias`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                nombre: cat.nombre.trim(),
+                precioBase: Number(cat.precioBase),
+                cantidad: Number(cat.cantidad),
+                descripcion: cat.descripcion?.trim() || undefined
+              })
+            });
+          })
+        ]);
+
+        const categoryError = categoryResponses.find((response) => !response.ok);
+        if (categoryError) {
+          const data = await categoryError.json();
+          throw new Error(data.error || "Ocurrió un error al actualizar las categorías.");
+        }
+
         setSuccess("Bus actualizado exitosamente.");
         setIsBusModalOpen(false);
         cargarBuses();
@@ -221,10 +327,10 @@ export default function BusesAdminPage() {
           placa: placa.toUpperCase().trim(),
           marcaChasis: marcaChasis.trim(),
           marcaCarroceria: marcaCarroceria.trim(),
-          fotografiaUrl: fotografiaUrl.trim() || undefined,
-          totalAsientos: totalAsientosCalculados,
+          fotografiaUrl: fotografiaFinalUrl || undefined,
+          totalAsientos: totalAsientosNumero,
           enTerminal,
-          categorias: categoriasNuevaFlota.map(cat => ({
+          categorias: categoriasNormalizadas.map(cat => ({
             nombre: cat.nombre.trim(),
             precioBase: Number(cat.precioBase),
             cantidad: Number(cat.cantidad),
@@ -243,7 +349,7 @@ export default function BusesAdminPage() {
           throw new Error(data.error || "Error al procesar la creación.");
         }
 
-        setSuccess("Nuevo autobús y plano de asientos creados con éxito.");
+        setSuccess("Nuevo autobús creado con éxito.");
         setIsBusModalOpen(false);
         cargarBuses();
       }
@@ -268,7 +374,7 @@ export default function BusesAdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nombre: catNombre.trim(),
-          precioBase: Number(catPrecio),
+          precioBase: Number(catPorcentaje),
           cantidad: Number(catCantidad),
           descripcion: catDescripcion.trim() || undefined
         })
@@ -284,7 +390,7 @@ export default function BusesAdminPage() {
       setIsBusModalOpen(false);
       // Reiniciar inputs
       setCatNombre("");
-      setCatPrecio(5.0);
+      setCatPorcentaje(10);
       setCatCantidad(10);
       setCatDescripcion("");
       cargarBuses();
@@ -292,28 +398,6 @@ export default function BusesAdminPage() {
       setError(err.message);
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  // Eliminar una categoría de un bus (DELETE /api/admin/buses/[id]/categorias/[id])
-  const handleDeleteCategory = async (busId: string, catId: string) => {
-    if (!confirm("¿Seguro de que deseas eliminar esta categoría? Se eliminarán los asientos asociados.")) return;
-    setError("");
-    setSuccess("");
-
-    try {
-      const res = await fetch(`/api/admin/buses/${busId}/categorias/${catId}`, {
-        method: "DELETE"
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "No se pudo eliminar.");
-
-      setSuccess("Categoría eliminada correctamente.");
-      setIsBusModalOpen(false);
-      cargarBuses();
-    } catch (err: any) {
-      setError(err.message);
     }
   };
 
@@ -416,10 +500,10 @@ export default function BusesAdminPage() {
       )}
 
       {/* Cuerpo principal del CRUD */}
-      <div className="grid gap-6 lg:grid-cols-12 items-start">
+      <div className="space-y-4">
         
-        {/* Tabla / Lista de Buses (8 Columnas) */}
-        <div className="lg:col-span-8 space-y-4">
+        {/* Tabla / Lista de Buses */}
+        <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             {loading ? (
               <div className="p-12 text-center text-sm text-slate-400">
@@ -464,11 +548,11 @@ export default function BusesAdminPage() {
                             <span>{bus.totalAsientos} asientos</span>
                           </div>
                         </td>
-                        <td className="py-4 px-6 text-right space-x-1">
+                        <td className="py-4 px-6 text-right space-x-1 whitespace-nowrap">
                           <button
-                            onClick={() => setSelectedBusMap(bus)}
-                            className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition inline-flex"
-                            title="Ver plano de asientos"
+                            onClick={() => handleOpenViewModal(bus)}
+                            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition inline-flex"
+                            title="Ver detalles"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -496,102 +580,96 @@ export default function BusesAdminPage() {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: Plano de Asientos Interactivo de Next.js (4 Columnas) */}
-        <div className="lg:col-span-4">
-          {selectedBusMap ? (
-            <div className="bg-slate-900 text-white p-6 rounded-2xl border border-slate-800 shadow-xl space-y-6 sticky top-6">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center space-x-2">
-                  <Bus className="h-5 w-5 text-blue-400" />
-                  <h3 className="font-bold text-white">Distribución: Bus {selectedBusMap.numero}</h3>
-                </div>
-                <button 
-                  onClick={() => setSelectedBusMap(null)}
-                  className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Categorías tarifarias del bus seleccionado */}
-              <div className="space-y-2.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Leyenda Tarifaria</span>
-                <div className="grid gap-2 text-xs">
-                  {selectedBusMap.categorias.map((cat, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-950/40 border border-slate-800">
-                      <div className="flex items-center space-x-2">
-                        <span className={`h-3 w-3 rounded ${
-                          idx === 0 ? "bg-blue-500" : idx === 1 ? "bg-amber-500" : "bg-purple-500"
-                        }`}></span>
-                        <span className="font-semibold">{cat.nombre}</span>
-                      </div>
-                      <span className="font-mono text-emerald-400">${Number(cat.precioBase).toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Representación visual de un bus real (Layout Tipo Avión) */}
-              <div className="bg-slate-950 rounded-2xl border border-slate-800 p-4 relative">
-                {/* Cabina del Conductor */}
-                <div className="h-10 border-b border-dashed border-slate-800 mb-6 flex items-center justify-between px-3 text-slate-500 text-[10px] font-bold uppercase">
-                  <span>Conductor </span>
-                  <span>Puerta </span>
-                </div>
-
-                {/* Plano de Asientos en una cuadrícula de 4 columnas */}
-                <div className="grid grid-cols-4 gap-2 max-h-80 overflow-y-auto pr-1">
-                  {Array.from({ length: Math.ceil(selectedBusMap.totalAsientos / 4) }).map((_, fIdx) => {
-                    const fila = fIdx + 1;
-                    return ["A", "B", "C", "D"].map((letra) => {
-                      const etiqueta = `${fila}${letra}`;
-                      const esVIP = fila === 1; 
-                      const esDiscapacidad = fila === 10;
-                      
-                      return (
-                        <div 
-                          key={etiqueta}
-                          className={`aspect-square rounded-lg flex flex-col items-center justify-center border text-[10px] font-bold transition-all relative ${
-                            esVIP 
-                              ? "bg-amber-500/20 border-amber-500/40 text-amber-300" 
-                              : esDiscapacidad 
-                              ? "bg-purple-500/20 border-purple-500/40 text-purple-300"
-                              : "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                          }`}
-                          title={`Asiento ${etiqueta}`}
-                        >
-                          <span>{etiqueta}</span>
-                        </div>
-                      );
-                    });
-                  })}
-                </div>
-
-                {/* Pasillo central de salida */}
-                <div className="absolute top-[48px] bottom-4 left-1/2 -translate-x-1/2 w-4 bg-slate-950/90 border-l border-r border-dashed border-slate-800 pointer-events-none flex items-center justify-center">
-                  <span className="text-[8px] text-slate-700 uppercase tracking-widest rotate-90">Pasillo</span>
-                </div>
-              </div>
-
-              <div className="bg-slate-950/40 p-3 rounded-xl border border-slate-800 flex items-start space-x-2 text-[11px] text-slate-400 leading-relaxed">
-                <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
-                <span>Los asientos han sido generados automáticamente en la base de datos siguiendo una grilla normalizada de 4 asientos por fila (2 izquierda, pasillo, 2 derecha).</span>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm sticky top-6">
-              <div className="bg-slate-50 p-3.5 rounded-full inline-block text-slate-400 mb-3.5">
-                <Eye className="h-6 w-6" />
-              </div>
-              <h3 className="font-bold text-slate-950">Visualizar Planos</h3>
-              <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">
-                Haz clic en el icono del ojo de cualquier bus para desplegar su plano de asientos y categorías tarifarias en tiempo real.
-              </p>
-            </div>
-          )}
-        </div>
-
       </div>
+
+      {/* MODAL PARA VER DETALLES DEL BUS */}
+      {isViewModalOpen && viewingBus && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-up">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+              <h3 className="text-base font-bold text-slate-900">
+                Detalles del Bus {viewingBus.numero}
+              </h3>
+              <button 
+                onClick={() => setIsViewModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-xs font-bold text-slate-400 uppercase">Placa</span>
+                  <span className="font-mono text-slate-800">{viewingBus.placa}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-bold text-slate-400 uppercase">Estado</span>
+                  <span className={viewingBus.activo ? "text-emerald-600 font-bold" : "text-red-600 font-bold"}>
+                    {viewingBus.activo ? "Activo" : "Inactivo"}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-xs font-bold text-slate-400 uppercase">Marca Chasis</span>
+                  <span className="text-slate-800">{viewingBus.marcaChasis || "No registrada"}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-bold text-slate-400 uppercase">Marca Carrocería</span>
+                  <span className="text-slate-800">{viewingBus.marcaCarroceria || "No registrada"}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-bold text-slate-400 uppercase">Total Asientos</span>
+                  <span className="text-slate-800">{viewingBus.totalAsientos}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-bold text-slate-400 uppercase">En Terminal</span>
+                  <span className="text-slate-800">{viewingBus.enTerminal ? "Sí" : "No"}</span>
+                </div>
+              </div>
+              
+              {viewingBus.fotografiaUrl && (
+                <div>
+                  <span className="block text-xs font-bold text-slate-400 uppercase mb-2">Fotografía</span>
+                  <div
+                    role="img"
+                    aria-label="Vista previa del bus"
+                    className="h-44 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${viewingBus.fotografiaUrl})` }}
+                  />
+                </div>
+              )}
+
+              <div>
+                <span className="block text-xs font-bold text-slate-400 uppercase mb-2">Categorías Tarifarias</span>
+                <div className="space-y-2">
+                  {viewingBus.categorias && viewingBus.categorias.length > 0 ? viewingBus.categorias.map((cat, idx) => (
+                    <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-slate-800">{cat.nombre}</p>
+                        <p className="text-xs text-slate-500">{cat.descripcion || "Sin descripción"}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-mono text-blue-600 font-bold">{cat.cantidad} asientos</p>
+                        <p className="text-xs text-slate-500">{Number(cat.precioBase) > 0 ? `+${cat.precioBase}%` : "Base"}</p>
+                      </div>
+                    </div>
+                  )) : (
+                    <p className="text-slate-500 italic text-sm">No hay categorías registradas</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end px-6 py-4 border-t border-slate-100 shrink-0">
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-xl transition shadow-md"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE BUS (CREAR / EDITAR) */}
       {isBusModalOpen && (
@@ -601,7 +679,7 @@ export default function BusesAdminPage() {
             {/* Header del Modal */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
               <h3 className="text-base font-bold text-slate-900">
-                {editingBus ? `Modificar Datos de Unidad` : "Dar de Alta Autobús con Categorías"}
+                {editingBus ? `Modificar Datos de Unidad` : "Crear Nueva Unidad"}
               </h3>
               <button 
                 onClick={() => setIsBusModalOpen(false)}
@@ -680,82 +758,66 @@ export default function BusesAdminPage() {
                 </div>
               </div>
 
-              {/* Fotografía URL */}
-              <div className="space-y-1.5">
-                <label htmlFor="bus-fotografia" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Fotografía o Imagen URL</label>
-                <input
-                  id="bus-fotografia"
-                  type="text"
-                  value={fotografiaUrl}
-                  onChange={(e) => setFotografiaUrl(e.target.value)}
-                  placeholder="https://ejemplo.com/bus.png"
-                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-slate-50/50 focus:bg-white text-slate-900"
-                />
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="bus-total-asientos" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Total de Asientos *</label>
+                  <input
+                    id="bus-total-asientos"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={totalAsientos}
+                    onChange={(e) => setTotalAsientos(limpiarEntero(e.target.value))}
+                    placeholder="Ej. 40"
+                    required
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-slate-50/50 focus:bg-white text-slate-900 font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="bus-fotografia" className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Fotografía o Imagen</label>
+                  <input
+                    id="bus-fotografia"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFotografiaChange}
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm bg-slate-50/50 focus:bg-white text-slate-900 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-blue-600"
+                  />
+                </div>
               </div>
 
-              {/* Parámetros de Estado */}
-              {editingBus && (
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 grid gap-4 sm:grid-cols-2">
-                  <div className="flex items-center space-x-2.5">
-                    <input 
-                      type="checkbox" 
-                      id="edit-terminal" 
-                      checked={enTerminal} 
-                      onChange={(e) => setEnTerminal(e.target.checked)}
-                      className="rounded text-blue-600 focus:ring-blue-500 border-slate-300"
-                    />
-                    <label htmlFor="edit-terminal" className="text-xs font-bold text-slate-700 cursor-pointer">Unidad disponible en Terminal</label>
-                  </div>
-                  <div className="flex items-center space-x-2.5">
-                    <input 
-                      type="checkbox" 
-                      id="edit-activo" 
-                      checked={activo} 
-                      onChange={(e) => setActivo(e.target.checked)}
-                      className="rounded text-blue-600 focus:ring-blue-500 border-slate-300"
-                    />
-                    <label htmlFor="edit-activo" className="text-xs font-bold text-slate-700 cursor-pointer">Unidad de transporte Activa</label>
-                  </div>
-                </div>
+              {fotografiaPreview && (
+                <div
+                  role="img"
+                  aria-label="Vista previa del bus"
+                  className="h-44 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${fotografiaPreview})` }}
+                />
               )}
 
-              {/* SECCIÓN CATEGORÍAS */}
-              {editingBus ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <h4 className="text-xs font-bold text-blue-600 uppercase tracking-widest">Categorías Tarifarias de la Unidad</h4>
-                    <button
-                      type="button"
-                      onClick={() => setIsCategoryModalOpen(true)}
-                      className="text-xs font-bold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition"
-                    >
-                      + Anexar Categoría
-                    </button>
-                  </div>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                <label htmlFor="edit-activo" className="flex cursor-pointer items-center justify-between gap-4">
+                  <span className="text-xs font-bold text-slate-700">Estado de la unidad</span>
+                  <button
+                    type="button"
+                    id="edit-activo"
+                    role="switch"
+                    aria-checked={activo}
+                    onClick={() => setActivo((value) => !value)}
+                    className={`relative h-6 w-11 rounded-full transition ${activo ? "bg-blue-600" : "bg-slate-300"}`}
+                  >
+                    <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition ${activo ? "left-6" : "left-1"}`} />
+                  </button>
+                  <span className={`text-xs font-bold ${activo ? "text-emerald-600" : "text-slate-500"}`}>
+                    {activo ? "Activo" : "Inactivo"}
+                  </span>
+                </label>
+              </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {editingBus.categorias.map((cat) => (
-                      <div key={cat.id} className="p-3.5 rounded-xl border border-slate-200/80 flex items-start justify-between bg-slate-50/50">
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">{cat.nombre}</p>
-                          <p className="text-xs text-slate-500 mt-1 font-mono">${Number(cat.precioBase).toFixed(2)} • {cat.cantidad} Asientos</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteCategory(editingBus.id, cat.id || "")}
-                          className="text-slate-400 hover:text-red-500 p-1 rounded-lg transition"
-                          title="Eliminar Categoría"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
+              {/* SECCIÓN CATEGORÍAS */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-1">
-                    <h4 className="text-xs font-bold text-blue-600 uppercase tracking-widest">Distribución de Asientos por Categoría</h4>
+                    <h4 className="text-xs font-bold text-blue-600 uppercase tracking-widest">Categorías Tarifarias</h4>
                     <button
                       type="button"
                       onClick={handleAgregarCategoriaNuevaFlota}
@@ -781,14 +843,15 @@ export default function BusesAdminPage() {
                           />
                         </div>
 
-                        {/* Input de Precio */}
+                        {/* Input de Porcentaje */}
                         <div className="sm:col-span-3 space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Precio Base ($)</label>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Porcentaje (%)</label>
                           <input 
                             type="number" 
                             required 
                             step="0.01"
-                            min="0.01"
+                            min="0"
+                            max="100"
                             value={cat.precioBase}
                             onChange={(e) => handleUpdateCategoriaNuevaFlota(idx, "precioBase", Number(e.target.value))}
                             className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 bg-white font-mono"
@@ -797,7 +860,7 @@ export default function BusesAdminPage() {
 
                         {/* Input de Cantidad */}
                         <div className="sm:col-span-3 space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nro. Asientos</label>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">N° Asientos</label>
                           <input 
                             type="number" 
                             required 
@@ -822,30 +885,37 @@ export default function BusesAdminPage() {
                     ))}
                   </div>
 
-                  {/* Contador auto-calculado de asientos para el envío del JSON */}
                   <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-center justify-between text-xs font-bold text-blue-800">
-                    <span>Total de Asientos Generados:</span>
-                    <span className="text-sm font-black font-mono">{totalAsientosCalculados} asientos</span>
+                    <span>Total de Asientos de la Unidad:</span>
+                    <span className="text-sm font-black font-mono">{totalAsientosNumero || 0} asientos</span>
                   </div>
                 </div>
-              )}
 
               {/* Botones del Modal Principal */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsBusModalOpen(false)}
-                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition disabled:opacity-50"
-                >
-                  {submitting ? "Guardando..." : "Guardar Unidad"}
-                </button>
+              <div className="space-y-4 pt-4 border-t border-slate-100 shrink-0">
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl text-sm flex items-center space-x-2.5 animate-fade-in">
+                    <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                    <span className="font-semibold">{error}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsBusModalOpen(false)}
+                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition disabled:opacity-50"
+                  >
+                    {submitting ? "Guardando..." : "Guardar Unidad"}
+                  </button>
+                </div>
               </div>
 
             </form>
@@ -882,14 +952,15 @@ export default function BusesAdminPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Precio Base ($) *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Porcentaje (%) *</label>
                   <input 
                     type="number" 
                     required 
                     step="0.01"
-                    min="0.01"
-                    value={catPrecio}
-                    onChange={(e) => setCatPrecio(Number(e.target.value))}
+                    min="0"
+                    max="100"
+                    value={catPorcentaje}
+                    onChange={(e) => setCatPorcentaje(Number(e.target.value))}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none font-mono"
                   />
                 </div>
