@@ -102,6 +102,10 @@ model Configuracion {
   emailSoporte     String? @map("email_soporte") @db.NVarChar(150)
   telefonoSoporte  String? @map("telefono_soporte") @db.NVarChar(20)
   direccion        String? @db.NVarChar(255)
+  nombreBanco      String?  @map("nombre_banco") @db.NVarChar(100)
+  numeroCuenta     String?  @map("numero_cuenta") @db.NVarChar(50)
+  titularCuenta    String?  @map("titular_cuenta") @db.NVarChar(150)
+  rucCooperativa   String?  @map("ruc_cooperativa") @db.NVarChar(13)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
@@ -257,9 +261,9 @@ model Boleto {
   precioBase       Decimal @map("precio_base") @db.Decimal(10, 2)
   descuento        Decimal @default(0) @db.Decimal(5, 2)
   precioFinal      Decimal @map("precio_final") @db.Decimal(10, 2)
-  codigoQr         String? @map("codigo_qr") @db.NVarChar(500)
+  codigoQr         String? @map("codigo_qr") @db.NVarChar(Max)
   estado           String  @default("PENDIENTE") @db.NVarChar(20) // PENDIENTE, PAGADO, ABORDADO, CANCELADO, NO_ABORDADO
-  comprobanteUrl   String? @map("comprobante_url") @db.NVarChar(500)
+  comprobanteUrl   String? @map("comprobante_url")
   motivoRechazo    String?  @map("motivo_rechazo") @db.NVarChar(500)
   metodoPago       String  @default("TRANSFERENCIA") @map("metodo_pago") @db.NVarChar(20) // TRANSFERENCIA, DEPOSITO, PAYPAL
   canalVenta       String  @map("canal_venta") @db.NVarChar(10) // ONLINE, OFICINA
