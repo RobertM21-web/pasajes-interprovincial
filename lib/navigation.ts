@@ -106,13 +106,13 @@ export function getRolColor(rol: string): {
         accentHover: "hover:bg-emerald-500",
         badge: "bg-emerald-500/20 text-emerald-300",
       };
-      case "CHOFER":
+  case "CHOFER":
   return {
-    bg: "bg-sky-900",
+    bg: "bg-[#1e3a5f]",           // Azul oscuro panel izquierdo
     text: "text-white",
-    accent: "bg-sky-600",
-    accentHover: "hover:bg-sky-500",
-    badge: "bg-sky-500/20 text-sky-300",
+    accent: "bg-[#3b82f6]",       // Azul agradable botones
+    accentHover: "hover:bg-[#2563eb]",
+    badge: "bg-blue-500/20 text-blue-300",
   };
     case "CLIENTE":
       return {
