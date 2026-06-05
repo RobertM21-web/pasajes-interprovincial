@@ -145,6 +145,7 @@ export default function SelectorAsientos({
 
   const selectedSeatData = seats.find((seat) => seat.id === selectedSeat);
   const selectedCount = selectedSeatData ? 1 : 0;
+  const totalPagar = selectedSeatData ? Number(selectedSeatData.precioBase) : 0;
   async function continuarCompra() {
     if (!selectedSeatData || !ruta) return;
 
@@ -407,9 +408,18 @@ export default function SelectorAsientos({
           <p className="text-xs text-gray-600 mt-0.5">
             Categoría: <span className="font-semibold uppercase text-purple-700">{selectedSeatData.categoria}</span>
           </p>
-          <p className="text-xs text-gray-600 mt-0.5">
-            Precio de este asiento: <span className="font-bold text-gray-900">${Number(selectedSeatData.precioBase).toFixed(2)}</span>
-          </p>
+          <div className="mt-3 rounded-lg bg-white border border-amber-100 p-3 space-y-1">
+            <p className="text-xs text-gray-600 flex justify-between">
+              <span>Precio del asiento</span>
+              <span className="font-semibold text-gray-900">
+                ${Number(selectedSeatData.precioBase).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm font-bold text-gray-900 flex justify-between border-t border-amber-100 pt-2 mt-2">
+              <span>Total a pagar</span>
+              <span className="text-amber-600">${totalPagar.toFixed(2)}</span>
+            </p>
+          </div>
           <div className="mt-4 space-y-3 text-left">
             <label className="block text-xs font-semibold text-gray-600" htmlFor="pasajeroNombre">
               Nombre del pasajero
