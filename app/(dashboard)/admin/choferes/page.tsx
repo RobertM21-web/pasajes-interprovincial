@@ -55,9 +55,13 @@ export default function ListaChoferes() {
             <div key={chofer.id} className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="bg-blue-500 w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                    {chofer.nombre?.charAt(0) || "C"}
-                  </div>
+                  {chofer.fotoUrl ? (
+  <img src={chofer.fotoUrl} alt={chofer.nombre} className="w-14 h-14 rounded-full object-cover border-2 border-blue-500" />
+) : (
+  <div className="bg-blue-500 w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl">
+    {chofer.nombre?.charAt(0) || "C"}
+  </div>
+)}
                   <div>
                     <h3 className="font-bold text-lg">{chofer.nombre}</h3>
                     <div className="flex gap-4 text-sm text-gray-500 mt-1">
