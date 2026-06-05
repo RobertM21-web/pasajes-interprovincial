@@ -144,7 +144,7 @@ export default function SelectorAsientos({
     .sort((a, b) => a - b);
 
   const selectedSeatData = seats.find((seat) => seat.id === selectedSeat);
-
+  const selectedCount = selectedSeatData ? 1 : 0;
   async function continuarCompra() {
     if (!selectedSeatData || !ruta) return;
 
@@ -286,7 +286,7 @@ export default function SelectorAsientos({
                   } else if (!isAllowed) {
                     seatStyle = "bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed opacity-70";
                   } else if (isSelected) {
-                    seatStyle = "bg-gray-500 text-white scale-105 ring-2 ring-gray-700";
+                    seatStyle = "bg-gray-500 text-white scale-105 ring-2 ring-green-600 border-2 border-green-500";
                   } else if (cat.includes("VIP")) {
                     seatStyle = "bg-yellow-400 text-yellow-900 border border-yellow-500 hover:bg-yellow-300";
                   } else if (cat.includes("DISCAPACIDAD")) {
@@ -305,13 +305,18 @@ export default function SelectorAsientos({
                       disabled={seat.ocupado || !isAllowed}
                       onClick={() => {
                         if (!seat.ocupado && isAllowed) {
-                          setSelectedSeat(seat.id);
+                          setSelectedSeat((prev) => (prev === seat.id ? null : seat.id));
                         }
                       }}
                       className={`group relative h-11 sm:h-12 w-full rounded-xl font-bold text-[10px] sm:text-xs flex flex-col items-center justify-center transition-all ${seatStyle}`}
                     >
                   <div className="flex items-center gap-0.5">
                     <span>{seat.etiqueta}</span>
+                    {isSelected && (
+                      <span className="text-[8px] px-1 bg-green-600 text-white rounded-full font-extrabold">
+                        ✓
+                      </span>
+                    )}
                     {cat.includes("VIP") && (
                       <span className="text-[7px] px-0.5 bg-yellow-700 text-white rounded font-extrabold">V</span>
                     )}
@@ -392,6 +397,9 @@ export default function SelectorAsientos({
       {/* Panel Informativo de Selección */}
       {selectedSeatData && (
         <div className="mt-6 max-w-sm mx-auto bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 shadow-sm">
+          <p className="text-xs font-semibold text-amber-700 mb-2">
+            Asientos seleccionados: {selectedCount}
+          </p>
           <p className="text-base font-medium text-gray-800">
             Asiento seleccionado:
             <span className="ml-2 text-amber-600 font-bold">{selectedSeatData.etiqueta}</span>
