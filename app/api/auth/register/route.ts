@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const registerSchema = z.object({
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const parsedData = registerSchema.safeParse(body);
     if (!parsedData.success) {
       return NextResponse.json(
-        { error: "Datos de entrada inválidos", details: parsedData.error.errors },
+        { error: "Datos de entrada inválidos", details: parsedData.error.issues },
         { status: 400 }
       );
     }

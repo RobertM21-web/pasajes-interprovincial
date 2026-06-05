@@ -8,28 +8,14 @@ import {
   Eye, 
   EyeOff, 
   AlertCircle, 
-  ArrowRight,
-  Info
+  ArrowRight
 } from "lucide-react";
+import { getSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { getDashboardPathForRole } from "@/lib/auth";
 
 // Resolución dinámica de módulos para evitar que falle el compilador estático del Canvas.
 // En tu entorno local de Next.js, estas asignaciones importarán automáticamente tus paquetes reales.
-const { signIn } = (() => {
-  try {
-    return require("next-auth/react");
-  } catch (e) {
-    return { signIn: () => Promise.resolve({ error: "No disponible en vista previa" }) };
-  }
-})();
-
-const { useRouter } = (() => {
-  try {
-    return require("next/navigation");
-  } catch (e) {
-    return { useRouter: () => ({ push: () => {} }) };
-  }
-})();
-
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -45,7 +31,7 @@ export default function LoginPage() {
 
     // Flujo real de NextAuth
     const result = await signIn("credentials", {
-      email,
+      email: email.trim().toLowerCase(),
       password,
       redirect: false,
     });
@@ -57,16 +43,12 @@ export default function LoginPage() {
     }
 
     try {
-      // Obtener los datos reales de la sesión para enrutar según el rol de SQL Server
-      const res = await fetch("/api/auth/session");
-      const session = await res.json();
+      const session = await getSession();
       const rol = session?.user?.rol;
 
-      if (rol === "ADMIN") router.push("/admin");
-      else if (rol === "OFICINISTA") router.push("/oficinista");
-      else if (rol === "CLIENTE") router.push("/cliente");
-      else router.push("/");
-    } catch (err) {
+      router.replace(getDashboardPathForRole(rol));
+      router.refresh();
+    } catch {
       setError("Ocurrió un error al verificar tu sesión. Inténtalo de nuevo.");
       setLoading(false);
     }

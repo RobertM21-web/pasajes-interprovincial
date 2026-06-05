@@ -7,13 +7,11 @@ import {
   Shield,
   Settings,
   FileText,
-  Route,
   Ticket,
   CreditCard,
   QrCode,
   Search,
   History,
-  Upload,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,18 +33,15 @@ export const adminNavItems: NavItem[] = [
 
 export const oficinistaNavItems: NavItem[] = [
   { label: "Inicio", href: "/oficinista", icon: LayoutDashboard },
-  { label: "Hojas de Ruta", href: "/oficinista/hojas-ruta", icon: FileText },
-  { label: "Habilitar Rutas", href: "/oficinista/habilitar-rutas", icon: Route },
-  { label: "Vender Boletos", href: "/oficinista/vender-boletos", icon: Ticket },
+  { label: "Hojas de Ruta", href: "/oficinista/hoja-ruta", icon: FileText },
+  { label: "Vender Boletos", href: "/oficinista/venta", icon: Ticket },
   { label: "Validar Pagos", href: "/oficinista/validar-pagos", icon: CreditCard },
   { label: "Validar Abordaje", href: "/oficinista/validar-abordaje", icon: QrCode },
 ];
 
 export const clienteNavItems: NavItem[] = [
   { label: "Inicio", href: "/cliente", icon: LayoutDashboard },
-  { label: "Buscar Rutas", href: "/cliente/buscar-rutas", icon: Search },
-  { label: "Mis Boletos", href: "/cliente/mis-boletos", icon: Ticket },
-  { label: "Subir Comprobante", href: "/cliente/subir-comprobante", icon: Upload },
+  { label: "Comprar Pasajes", href: "/cliente/compra-online", icon: Search },
   { label: "Historial", href: "/cliente/historial", icon: History },
 ];
 
