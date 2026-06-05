@@ -44,6 +44,7 @@ interface Boleto {
   precioBase: number;
   descuento: number;
   precioFinal: number;
+  emailEnvio: string | null;
   pasajeroNombre: string;
   pasajeroCedula: string;
   tipoPasajero: string;
