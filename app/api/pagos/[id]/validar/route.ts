@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { generateBoletoQR } from '@/lib/qr'
 
 // PATCH /api/pagos/[id]/validar — oficinista valida o rechaza un comprobante
 export async function PATCH(
@@ -11,7 +12,7 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
-    const { aprobado } = body
+    const { aprobado, motivoRechazo } = body
     const session = await getServerSession(authOptions)
     const vendidoPorId = session?.user?.id
 
@@ -29,8 +30,19 @@ export async function PATCH(
       )
     }
 
+    if (!aprobado && !motivoRechazo) {
+      return NextResponse.json(
+        { error: 'motivoRechazo es requerido al rechazar' },
+        { status: 400 }
+      )
+    }
+
     const boleto = await prisma.boleto.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        asiento: true,
+        ruta: { include: { frecuencia: true } }
+      }
     })
 
     if (!boleto) {
@@ -47,11 +59,17 @@ export async function PATCH(
       )
     }
 
+    // Si aprueba, generar QR automáticamente
+    if (aprobado) {
+      await generateBoletoQR(boleto.id)
+    }
+
     const boletoActualizado = await prisma.boleto.update({
       where: { id },
       data: {
         estado: aprobado ? 'PAGADO' : 'CANCELADO',
-        vendidoPorId
+        vendidoPorId,
+        ...(motivoRechazo && { motivoRechazo }),
       },
       include: {
         asiento: { include: { categoria: true } },
