@@ -54,6 +54,17 @@ function formatCategoria(categoria?: string): string {
   }
 }
 
+function seatMatchesPassengerType(seatCategory?: string, tipoPasajero?: string): boolean {
+  const categoria = seatCategory?.toUpperCase() || "";
+  const tipo = normalizeTipoPasajero(tipoPasajero);
+
+  if (tipo === "DISCAPACIDAD") return categoria.includes("DISCAPACIDAD");
+  if (tipo === "TERCERA_EDAD") return categoria.includes("TERCERA");
+  if (tipo === "MENOR_EDAD") return categoria.includes("MENOR");
+
+  return true;
+}
+
 export default function SelectorAsientos({
   rutaId,
   tipoPasajero,
@@ -266,32 +277,39 @@ export default function SelectorAsientos({
               
               const cat = seat.categoria?.toUpperCase() || "";
 
+              const isAllowed = seatMatchesPassengerType(seat.categoria, tipoPasajero);
+
                 let seatStyle = "";
 
-                if (seat.ocupado) {
-                  seatStyle = "bg-red-400 text-white cursor-not-allowed opacity-70";
-                } else if (isSelected) {
-                  seatStyle = "bg-gray-500 text-white scale-105 ring-2 ring-gray-700";
-                } else if (cat.includes("VIP")) {
-                  seatStyle = "bg-yellow-400 text-yellow-900 border border-yellow-500 hover:bg-yellow-300";
-                } else if (cat.includes("DISCAPACIDAD")) {
-                  seatStyle = "bg-blue-400 text-white border border-blue-500 hover:bg-blue-300";
-                } else if (cat.includes("TERCERA")) {
-                  seatStyle = "bg-purple-400 text-white border border-purple-500 hover:bg-purple-300";
-                } else if (cat.includes("MENOR")) {
-                  seatStyle = "bg-orange-400 text-white border border-orange-500 hover:bg-orange-300";
-                } else {
-                  seatStyle = "bg-green-400 text-white border border-green-500 hover:bg-green-300";
-                }
+                  if (seat.ocupado) {
+                    seatStyle = "bg-red-400 text-white cursor-not-allowed opacity-70";
+                  } else if (!isAllowed) {
+                    seatStyle = "bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed opacity-70";
+                  } else if (isSelected) {
+                    seatStyle = "bg-gray-500 text-white scale-105 ring-2 ring-gray-700";
+                  } else if (cat.includes("VIP")) {
+                    seatStyle = "bg-yellow-400 text-yellow-900 border border-yellow-500 hover:bg-yellow-300";
+                  } else if (cat.includes("DISCAPACIDAD")) {
+                    seatStyle = "bg-blue-400 text-white border border-blue-500 hover:bg-blue-300";
+                  } else if (cat.includes("TERCERA")) {
+                    seatStyle = "bg-purple-400 text-white border border-purple-500 hover:bg-purple-300";
+                  } else if (cat.includes("MENOR")) {
+                    seatStyle = "bg-orange-400 text-white border border-orange-500 hover:bg-orange-300";
+                  } else {
+                    seatStyle = "bg-green-400 text-white border border-green-500 hover:bg-green-300";
+                  }
 
-              return (
-                <button
-                  key={seat.id}
-                  disabled={seat.ocupado}
-                  onClick={() => setSelectedSeat(seat.id)}
-                  className={`group relative h-12 w-full rounded-xl font-bold text-xs flex flex-col items-center justify-center transition-all ${seatStyle}`}
-                  
-                >
+                  return (
+                    <button
+                      key={seat.id}
+                      disabled={seat.ocupado || !isAllowed}
+                      onClick={() => {
+                        if (!seat.ocupado && isAllowed) {
+                          setSelectedSeat(seat.id);
+                        }
+                      }}
+                      className={`group relative h-12 w-full rounded-xl font-bold text-xs flex flex-col items-center justify-center transition-all ${seatStyle}`}
+                    >
                   <div className="flex items-center gap-0.5">
                     <span>{seat.etiqueta}</span>
                     {cat.includes("VIP") && (
