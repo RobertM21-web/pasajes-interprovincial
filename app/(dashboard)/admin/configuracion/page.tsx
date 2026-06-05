@@ -85,6 +85,13 @@ const Icon = {
       <path d="M2 22h20" />
     </svg>
   ),
+
+    Eye: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
 };
 
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
@@ -266,6 +273,11 @@ export default function ConfigCooperativaPage() {
     setLogoPreview(previewUrl);
   };
 
+  const previewPrimary = form.colorPrimario || "#0f172a";
+  const previewSecondary = form.colorSecundario || "#1d4ed8";
+  const previewLogo = logoPreview || form.logoUrl;
+  const previewName = form.nombreCooperativa || "Nombre de la cooperativa";
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrors({});
@@ -428,6 +440,169 @@ export default function ConfigCooperativaPage() {
               <Field label="Teléfono de soporte" error={errors.telefonoSoporte}>
                 <input type="tel" value={form.telefonoSoporte} onChange={set("telefonoSoporte")} placeholder="032 123 4567" style={inputStyle(!!errors.telefonoSoporte)} maxLength={20} />
               </Field>
+            </div>
+          </SectionCard>
+
+                    {/* Sección: Preview en vivo */}
+          <SectionCard title="Vista previa en vivo" icon={<Icon.Eye />}>
+            <div
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: "16px",
+                overflow: "hidden",
+                background: "#ffffff",
+                boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)",
+              }}
+            >
+              <div
+                style={{
+                  height: "72px",
+                  background: `linear-gradient(135deg, ${previewPrimary}, ${previewSecondary})`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "0 20px",
+                  color: "#ffffff",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                  <div
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "12px",
+                      background: "rgba(255,255,255,0.18)",
+                      border: "1px solid rgba(255,255,255,0.25)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {previewLogo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={previewLogo}
+                        alt="Logo de vista previa"
+                        style={{ width: "100%", height: "100%", objectFit: "contain", background: "#fff" }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: "18px", fontWeight: 800 }}>C</span>
+                    )}
+                  </div>
+
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: "15px",
+                        fontWeight: 800,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        maxWidth: "280px",
+                      }}
+                    >
+                      {previewName}
+                    </div>
+                    <div style={{ fontSize: "12px", opacity: 0.85 }}>
+                      Header de la aplicación
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      padding: "6px 10px",
+                      borderRadius: "999px",
+                      background: "rgba(255,255,255,0.16)",
+                      border: "1px solid rgba(255,255,255,0.24)",
+                    }}
+                  >
+                    Inicio
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      padding: "6px 10px",
+                      borderRadius: "999px",
+                      background: "rgba(255,255,255,0.16)",
+                      border: "1px solid rgba(255,255,255,0.24)",
+                    }}
+                  >
+                    Boletos
+                  </span>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: "20px",
+                  display: "grid",
+                  gap: "16px",
+                  background: "#f8fafc",
+                }}
+              >
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    style={{
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "10px 16px",
+                      background: previewPrimary,
+                      color: "#ffffff",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Botón principal
+                  </button>
+
+                  <button
+                    type="button"
+                    style={{
+                      borderRadius: "10px",
+                      padding: "10px 16px",
+                      background: "#ffffff",
+                      color: previewSecondary,
+                      border: `1px solid ${previewSecondary}`,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Botón secundario
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    borderRadius: "14px",
+                    background: "#ffffff",
+                    border: "1px solid #e5e7eb",
+                    padding: "16px",
+                  }}
+                >
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#111827", marginBottom: "8px" }}>
+                    Ejemplo de contenido
+                  </div>
+                  <div style={{ fontSize: "13px", color: "#6b7280", marginBottom: "10px" }}>
+                    Así se verán el header, botones y elementos principales con tu personalización.
+                  </div>
+                  <a
+                    href="#"
+                    onClick={(e) => e.preventDefault()}
+                    style={{
+                      color: previewSecondary,
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                    }}
+                  >
+                    Enlace de ejemplo
+                  </a>
+                </div>
+              </div>
             </div>
           </SectionCard>
 
