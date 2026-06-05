@@ -10,12 +10,12 @@ export default function ListaChoferes() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/usuarios?rol=CHOFER")
-      .then((res) => res.json())
-      .then((data) => {
-        setChoferes(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
+   fetch("/api/admin/usuarios?rol=CHOFER")
+  .then((res) => res.json())
+  .then((data) => {
+    setChoferes(data.usuarios || []);
+    setLoading(false);
+  })
       .catch(() => setLoading(false));
   }, []);
 
