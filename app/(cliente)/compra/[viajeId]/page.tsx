@@ -64,6 +64,8 @@ export default function CompraViajePage({
   const [comprobanteUrl, setComprobanteUrl] = useState("");
   const [comprobanteFileName, setComprobanteFileName] = useState<string | null>(null);
   const [comprobantePreview, setComprobantePreview] = useState<string | null>(null);
+  const [emailEnvio, setEmailEnvio] = useState("");
+  const [emailEnvioEditado, setEmailEnvioEditado] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [configuracion, setConfiguracion] = useState<{
     nombreBanco?: string | null;
@@ -147,6 +149,13 @@ export default function CompraViajePage({
     return todosLosPasajeros.every((p) => validarCamposPasajero(p));
   }, [todosLosPasajeros]);
 
+  const handleTitularChange = (nuevoTitular: Pasajero) => {
+    setTitular(nuevoTitular);
+    if (!emailEnvioEditado && nuevoTitular.email) {
+      setEmailEnvio(nuevoTitular.email);
+    }
+  };
+
   // Manejo de clicks en el paso 1
   const continuarAAsientos = (event: FormEvent) => {
     event.preventDefault();
@@ -211,6 +220,10 @@ export default function CompraViajePage({
     return todosLosPasajeros.every((p) => asignacionAsientos[p.uniqueId] !== undefined);
   }, [todosLosPasajeros, asignacionAsientos]);
 
+  const emailEnvioValido = useMemo(() => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailEnvio.trim());
+  }, [emailEnvio]);
+
   const precioTotalCompra = useMemo(() => {
     return todosLosPasajeros.reduce((total, p) => {
       const seat = asignacionAsientos[p.uniqueId];
@@ -244,6 +257,10 @@ export default function CompraViajePage({
         throw new Error("Sube el comprobante de pago para continuar.");
       }
 
+      if (!emailEnvioValido) {
+        throw new Error("Ingresa un email valido para recibir tus boletos.");
+      }
+
       // Preparar payload transaccional (array de boletos)
       const payload = todosLosPasajeros.map((p) => {
         const seat = asignacionAsientos[p.uniqueId];
@@ -257,6 +274,7 @@ export default function CompraViajePage({
           destinoTramo: ruta.destino,
           metodoPago,
           canalVenta: "ONLINE",
+          emailEnvio: emailEnvio.trim().toLowerCase(),
         };
       });
 
@@ -400,7 +418,7 @@ export default function CompraViajePage({
         {/* -------------------- STEP 1: FORMULARIO DE PASAJEROS -------------------- */}
         {step === 1 && (
           <form onSubmit={continuarAAsientos} className="flex flex-col gap-6">
-            <DatosTitular value={titular} onChange={setTitular} />
+            <DatosTitular value={titular} onChange={handleTitularChange} />
 
             <ListaAcompanantes value={acompanantes} onChange={setAcompanantes} />
 
@@ -743,6 +761,27 @@ export default function CompraViajePage({
                 </h3>
 
                 <div className="space-y-3">
+                  <label className="block text-xs font-semibold text-slate-600" htmlFor="emailEnvio">
+                    Email donde recibiras tus boletos
+                  </label>
+                  <input
+                    id="emailEnvio"
+                    type="email"
+                    required
+                    value={emailEnvio}
+                    onChange={(event) => {
+                      setEmailEnvioEditado(true);
+                      setEmailEnvio(event.target.value);
+                    }}
+                    className={`w-full rounded-xl border bg-white px-3 py-3 text-sm text-slate-900 outline-none focus:border-amber-500 ${
+                      emailEnvio.trim() && !emailEnvioValido ? "border-red-300" : "border-slate-200"
+                    }`}
+                    placeholder="correo@ejemplo.com"
+                  />
+                  {emailEnvio.trim() && !emailEnvioValido && (
+                    <p className="text-xs font-medium text-red-600">Ingresa un correo electronico valido.</p>
+                  )}
+
                   <label className="block text-xs font-semibold text-slate-600" htmlFor="metodoPago">
                     Selecciona cómo deseas pagar
                   </label>
@@ -864,6 +903,7 @@ export default function CompraViajePage({
                   type="button"
                   disabled={
                     submitting ||
+                    !emailEnvioValido ||
                     ((metodoPago === "TRANSFERENCIA" || metodoPago === "DEPOSITO") && !comprobanteUrl.trim())
                   }
                   onClick={confirmarCompraFinal}
@@ -879,7 +919,7 @@ export default function CompraViajePage({
                   )}
                 </button>
                 <p className="mt-3 text-center text-[10px] text-slate-400 leading-normal">
-                  Al confirmar la compra, tus asientos quedan reservados temporalmente mientras el oficinista verifica tu pago.
+                  Al confirmar la compra, tus asientos quedan reservados temporalmente mientras el oficinista verifica tu pago. Recibiras tus boletos en {emailEnvio || "tu correo"} cuando el pago sea aprobado.
                 </p>
               </div>
             </div>

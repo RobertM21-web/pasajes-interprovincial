@@ -3,7 +3,10 @@
  * Muestra toda la información del boleto en un formato amigable
  */
 
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { formatFechaCorta, formatHora, formatMoneda } from "@/lib/formatters";
 import { EstadoBadge } from "./estado-badge";
 
@@ -12,6 +15,7 @@ interface BoletoCardProps {
     id: string;
     estado: string;
     precioFinal: number;
+    emailEnvio?: string | null;
     pasajeroNombre: string;
     origenTramo: string;
     destinoTramo: string;
@@ -31,6 +35,32 @@ interface BoletoCardProps {
 
 export function BoletoCard({ boleto }: BoletoCardProps) {
   const fecha = new Date(boleto.createdAt);
+  const [reenviando, setReenviando] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState("");
+
+  async function reenviarBoleto() {
+    setReenviando(true);
+    setMensaje("");
+    setError("");
+
+    try {
+      const response = await fetch(`/api/email/reenviar/${boleto.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || "No se pudo reenviar el boleto.");
+      }
+      setMensaje(data?.message || `Boletos enviados a ${boleto.emailEnvio || "tu correo"}. Revisa tu bandeja de entrada.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo reenviar el boleto.");
+    } finally {
+      setReenviando(false);
+    }
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-5 space-y-4">
@@ -137,6 +167,33 @@ export function BoletoCard({ boleto }: BoletoCardProps) {
           >
             📄 Subir comprobante
           </button>
+        )}
+
+        {(boleto.estado === "PAGADO" || boleto.estado === "ABORDADO") && (
+          <button
+            type="button"
+            disabled={reenviando}
+            onClick={reenviarBoleto}
+            className={`
+              w-full inline-flex items-center justify-center
+              px-4 py-2.5 rounded-lg font-medium text-sm
+              bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50
+              transition-colors duration-200
+            `}
+          >
+            {reenviando ? "Reenviando..." : "Reenviar boleto"}
+          </button>
+        )}
+
+        {mensaje && (
+          <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-xs font-medium text-emerald-700">
+            {mensaje}
+          </p>
+        )}
+        {error && (
+          <p className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs font-medium text-red-700">
+            {error}
+          </p>
         )}
       </div>
     </div>

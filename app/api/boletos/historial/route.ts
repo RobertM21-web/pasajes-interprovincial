@@ -70,6 +70,7 @@ export async function GET(request: Request) {
       precioBase: Number(boleto.precioBase),
       descuento: Number(boleto.descuento),
       precioFinal: Number(boleto.precioFinal),
+      emailEnvio: boleto.emailEnvio,
       pasajeroNombre: boleto.pasajeroNombre,
       pasajeroCedula: boleto.pasajeroCedula,
       tipoPasajero: boleto.tipoPasajero,
