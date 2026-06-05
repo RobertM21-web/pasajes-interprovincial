@@ -187,7 +187,8 @@ export default function ConfigCooperativaPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
-
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState("");
   useEffect(() => {
     async function fetchConfig() {
       try {
@@ -221,6 +222,14 @@ export default function ConfigCooperativaPage() {
     fetchConfig();
   }, []);
 
+    useEffect(() => {
+    return () => {
+      if (logoPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
+
   const set = (field: keyof ConfigForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -229,6 +238,32 @@ export default function ConfigCooperativaPage() {
   const setColor = (field: keyof ConfigForm) => (v: string) => {
     setForm((prev) => ({ ...prev, [field]: v }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+    const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setToast({ type: "error", message: "Solo se permiten imágenes JPG, PNG o WEBP." });
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setToast({ type: "error", message: "La imagen no debe superar los 5MB." });
+      e.target.value = "";
+      return;
+    }
+
+    if (logoPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(logoPreview);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setLogoFile(file);
+    setLogoPreview(previewUrl);
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -304,17 +339,44 @@ export default function ConfigCooperativaPage() {
             <Field label="Nombre de la cooperativa *" error={errors.nombreCooperativa}>
               <input type="text" value={form.nombreCooperativa} onChange={set("nombreCooperativa")} placeholder="Ej: Cooperativa Amazonas" style={inputStyle(!!errors.nombreCooperativa)} maxLength={150} />
             </Field>
-            <Field label="URL del logo" error={errors.logoUrl} hint="Enlace público a la imagen del logo (https://...)">
-              <input type="url" value={form.logoUrl} onChange={set("logoUrl")} placeholder="https://ejemplo.com/logo.png" style={inputStyle(!!errors.logoUrl)} />
-            </Field>
-            {form.logoUrl && /^https?:\/\/.+/.test(form.logoUrl) && (
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={form.logoUrl} alt="Vista previa" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
-                  style={{ height: "56px", maxWidth: "160px", objectFit: "contain", border: "1.5px solid #e5e7eb", borderRadius: "10px", padding: "6px", background: "white" }} />
-                <span style={{ fontSize: "12px", color: "#9ca3af" }}>Vista previa del logo</span>
-              </div>
-            )}
+            <Field
+                  label="Logo de la cooperativa"
+                  hint="Sube una imagen JPG, PNG o WEBP de máximo 5MB"
+                >
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                    onChange={handleLogoFileChange}
+                    style={{
+                      ...inputStyle(false),
+                      padding: "8px 12px",
+                      cursor: "pointer",
+                    }}
+                  />
+                </Field>
+
+                {(logoPreview || form.logoUrl) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={logoPreview || form.logoUrl}
+                      alt="Vista previa del logo"
+                      onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+                      style={{
+                        height: "56px",
+                        maxWidth: "160px",
+                        objectFit: "contain",
+                        border: "1.5px solid #e5e7eb",
+                        borderRadius: "10px",
+                        padding: "6px",
+                        background: "white",
+                      }}
+                    />
+                    <span style={{ fontSize: "12px", color: "#9ca3af" }}>
+                      Vista previa del logo
+                    </span>
+                  </div>
+                )}
             <Field label="Dirección" error={errors.direccion}>
               <textarea value={form.direccion} onChange={set("direccion")} placeholder="Ej: Av. Principal 123, Ambato, Ecuador" rows={2} maxLength={255} style={{ ...inputStyle(!!errors.direccion), resize: "vertical" }} />
             </Field>
