@@ -264,10 +264,11 @@ export default async function HojaRutaPage() {
                           </div>
                         </div>
                         
-                        {/* Hover Action */}
-                        <Link href={`/oficinista/rutas/${ruta.id}`} className="absolute inset-0 z-10">
-                          <span className="sr-only">Ver detalles de la ruta</span>
-                        </Link>
+                       <div className="mt-3 text-right">
+  <Link href={`/oficinista/rutas/${ruta.id}`} className="text-blue-600 text-sm font-medium hover:underline">
+    Ver detalles →
+  </Link>
+</div>
                       </div>
                     ))}
                   </div>

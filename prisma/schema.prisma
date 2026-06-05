@@ -73,14 +73,22 @@ model Usuario {
   activo        Boolean   @default(true)
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
-
+fotoUrl       String?  @map("foto_url") @db.NVarChar(500)
+  licencia      String?  @db.NVarChar(20)
+  tipoLicencia String? @map("tipo_licencia") @db.NVarChar(30) // A, B, C, D, E
+  busAsignadoId String? @map("bus_asignado_id")
+ 
   // Relaciones
+  busAsignado  Bus?    @relation("BusChofer", fields: [busAsignadoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  checklists      ChecklistViaje[]
+  registrosCombustible RegistroCombustible[]
   rol               Rol            @relation(fields: [rolId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   boletosComprados  Boleto[]       @relation("CompradoPor")
   boletosVendidos   Boleto[]       @relation("VendidoPor")
   hojasRuta         HojaRuta[]
   rutasHabilitadas  Ruta[]
   notificaciones    Notificacion[]
+  reportesChofer ChoferReporte[] 
 
   @@map("usuarios")
 }
@@ -130,6 +138,9 @@ model Bus {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   // Relaciones
+  choferes        Usuario[]              @relation("BusChofer")
+  registrosCombustible RegistroCombustible[]
+  estado          EstadoBus?
   categorias CategoriaAsiento[]
   rutas      Ruta[]
 
@@ -233,13 +244,15 @@ model Ruta {
   estado       String   @default("HABILITADA") @db.NVarChar(20) // HABILITADA, EN_CURSO, COMPLETADA, CANCELADA
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-
+choferId     String?  @map("chofer_id")
   // Relaciones
+  checklists      ChecklistViaje[]
   frecuencia Frecuencia @relation(fields: [frecuenciaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   bus        Bus        @relation(fields: [busId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   oficinista Usuario    @relation(fields: [oficinistaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hojaRuta   HojaRuta?  @relation(fields: [hojaRutaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   boletos    Boleto[]
+  reportesChofer ChoferReporte[]
 
   @@unique([busId, fecha, frecuenciaId])
   @@map("rutas")
@@ -301,4 +314,62 @@ model Notificacion {
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("notificaciones")
+}
+
+model ChoferReporte {
+  id          String   @id @default(uuid())
+  rutaId      String?   @map("ruta_id")
+  choferId    String   @map("chofer_id")
+  tipo        String   @db.NVarChar(30) // RETRASO, DANO, EMERGENCIA, CLIMA, TRAFICO, OTRO
+  descripcion String   @db.NVarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  ruta   Ruta?    @relation(fields: [rutaId], references: [id])
+  chofer Usuario @relation(fields: [choferId], references: [id])
+
+  @@map("chofer_reportes")
+}
+// Checklist pre-viaje
+model ChecklistViaje {
+  id        String   @id @default(uuid())
+  rutaId    String   @map("ruta_id")
+  choferId  String   @map("chofer_id")
+  luces     Boolean  @default(false)
+  frenos    Boolean  @default(false)
+  llantas   Boolean  @default(false)
+  espejos   Boolean  @default(false)
+  botiquin  Boolean  @default(false)
+  extintor  Boolean  @default(false)
+  observaciones String? @db.NVarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+ruta   Ruta    @relation(fields: [rutaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+chofer Usuario @relation(fields: [choferId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// Registro de combustible
+model RegistroCombustible {
+  id        String   @id @default(uuid())
+  busId     String   @map("bus_id")
+  choferId  String   @map("chofer_id")
+  galones   Decimal  @db.Decimal(10, 2)
+  costo     Decimal  @db.Decimal(10, 2)
+  kilometraje Int    @map("kilometraje")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  bus    Bus      @relation(fields: [busId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+chofer Usuario  @relation(fields: [choferId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// Estado del bus (desgaste)
+model EstadoBus {
+  id          String   @id @default(uuid())
+  busId       String   @unique @map("bus_id")
+  llantas     Int      @default(100) // porcentaje 0-100
+  aceite      Int      @default(100)
+  motor       String   @default("OK") @db.NVarChar(20)
+  observaciones String? @db.NVarChar(500)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  bus Bus @relation(fields: [busId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }

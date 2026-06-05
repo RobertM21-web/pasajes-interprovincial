@@ -1,4 +1,4 @@
-export const ROLES = ["ADMIN", "OFICINISTA", "CLIENTE"] as const;
+export const ROLES = ["ADMIN", "OFICINISTA", "CLIENTE", "CHOFER"] as const;
 
 export type UserRole = (typeof ROLES)[number];
 
@@ -6,6 +6,7 @@ export const ROLE_DASHBOARD_PATHS: Record<UserRole, string> = {
   ADMIN: "/admin",
   OFICINISTA: "/oficinista",
   CLIENTE: "/cliente",
+  CHOFER: "/chofer",
 };
 
 export function isUserRole(value: unknown): value is UserRole {
