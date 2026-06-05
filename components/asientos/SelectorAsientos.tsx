@@ -62,7 +62,7 @@ function seatMatchesPassengerType(seatCategory?: string, tipoPasajero?: string):
   if (tipo === "TERCERA_EDAD") return categoria.includes("TERCERA");
   if (tipo === "MENOR_EDAD") return categoria.includes("MENOR");
 
-  return true;
+  return categoria.includes("NORMAL") || categoria.includes("VIP");
 }
 
 export default function SelectorAsientos({
