@@ -30,6 +30,7 @@ export async function GET(
         id: true,
         numero: true,
         placa: true,
+        fotografiaUrl: true,
         totalAsientos: true,
         categorias: {
           select: {
@@ -37,6 +38,19 @@ export async function GET(
             nombre: true,
             precioBase: true,
             cantidad: true,
+            asientos: {
+              select: {
+                id: true,
+                etiqueta: true,
+                numero: true,
+                fila: true,
+                posicion: true,
+              },
+              orderBy: [
+                { fila: "asc" },
+                { numero: "asc" },
+              ],
+            },
           },
         },
       },
