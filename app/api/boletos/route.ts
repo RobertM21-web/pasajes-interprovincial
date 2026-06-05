@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
@@ -30,82 +31,65 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Usar transacción para garantizar concurrencia segura
-    const boleto = await prisma.$transaction(async (tx) => {
-
-      // Verificar si el asiento ya está ocupado dentro de la transacción
-      const boletoExistente = await tx.boleto.findUnique({
-        where: { rutaId_asientoId: { rutaId, asientoId } }
-      })
-
-      if (boletoExistente && boletoExistente.estado !== 'CANCELADO') {
-        throw new Error('ASIENTO_OCUPADO')
-      }
-
-      // Obtener precio del asiento
-      const asiento = await tx.asiento.findUnique({
-        where: { id: asientoId },
-        include: { categoria: true }
-      })
-
-      if (!asiento) {
-        throw new Error('ASIENTO_NO_ENCONTRADO')
-      }
-
-      // Calcular descuento
-      const precioBase = Number(asiento.categoria.precioBase)
-      let descuento = 0
-      if (tipoPasajero === 'TERCERA_EDAD' || tipoPasajero === 'DISCAPACIDAD') {
-        descuento = 0.5
-      } else if (tipoPasajero === 'MENOR_EDAD') {
-        descuento = 0.25
-      }
-
-      const precioFinal = precioBase * (1 - descuento)
-
-      // Crear boleto de forma atómica
-      return await tx.boleto.create({
-        data: {
-          rutaId,
-          asientoId,
-          usuarioId,
-          vendidoPorId,
-          pasajeroNombre,
-          pasajeroCedula,
-          tipoPasajero: tipoPasajero || 'NORMAL',
-          precioBase,
-          descuento,
-          precioFinal,
-          metodoPago: metodoPago || 'TRANSFERENCIA',
-          canalVenta: canalVenta || 'ONLINE',
-          origenTramo,
-          destinoTramo,
-          estado: canalVenta === 'OFICINA' ? 'PAGADO' : 'PENDIENTE'
-        },
-        include: {
-          asiento: { include: { categoria: true } },
-          ruta: { include: { frecuencia: true } }
-        }
-      })
+    // Obtener precio del asiento y validar existencia
+    const asiento = await prisma.asiento.findUnique({
+      where: { id: asientoId },
+      include: { categoria: true }
     })
 
-    return NextResponse.json(boleto, { status: 201 })
-
-  } catch (error: any) {
-    if (error.message === 'ASIENTO_OCUPADO') {
-      return NextResponse.json(
-        { error: 'El asiento ya fue tomado por otro usuario' },
-        { status: 409 }
-      )
-    }
-    if (error.message === 'ASIENTO_NO_ENCONTRADO') {
+    if (!asiento) {
       return NextResponse.json(
         { error: 'Asiento no encontrado' },
         { status: 404 }
       )
     }
+
+    const precioBase = Number(asiento.categoria.precioBase)
+    let descuento = 0
+    if (tipoPasajero === 'TERCERA_EDAD' || tipoPasajero === 'DISCAPACIDAD') {
+      descuento = 0.5
+    } else if (tipoPasajero === 'MENOR_EDAD') {
+      descuento = 0.25
+    }
+
+    const precioFinal = precioBase * (1 - descuento)
+
+    const boleto = await prisma.boleto.create({
+      data: {
+        rutaId,
+        asientoId,
+        usuarioId,
+        vendidoPorId,
+        pasajeroNombre,
+        pasajeroCedula,
+        tipoPasajero: tipoPasajero || 'NORMAL',
+        precioBase,
+        descuento,
+        precioFinal,
+        metodoPago: metodoPago || 'TRANSFERENCIA',
+        canalVenta: canalVenta || 'ONLINE',
+        origenTramo,
+        destinoTramo,
+        estado: canalVenta === 'OFICINA' ? 'PAGADO' : 'PENDIENTE'
+      },
+      include: {
+        asiento: { include: { categoria: true } },
+        ruta: { include: { frecuencia: true } }
+      }
+    })
+
+    return NextResponse.json(boleto, { status: 201 })
+
+  } catch (error: any) {
+    console.error('Error en POST /api/boletos:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'El asiento ya fue tomado por otro usuario' },
+        { status: 409 }
+      )
+    }
     return NextResponse.json(
-      { error: 'Error al crear el boleto' },
+      { error: 'Error al crear el boleto', details: error?.message || String(error) },
       { status: 500 }
     )
   }

@@ -56,6 +56,14 @@ export default function SelectorAsientos({
   const [pasajeroCedula, setPasajeroCedula] = useState("");
   const [metodoPago, setMetodoPago] = useState("TRANSFERENCIA");
   const [comprobanteUrl, setComprobanteUrl] = useState("");
+  const [comprobanteFileName, setComprobanteFileName] = useState<string | null>(null);
+  const [comprobantePreview, setComprobantePreview] = useState<string | null>(null);
+  const [configuracion, setConfiguracion] = useState<{
+    nombreBanco?: string | null;
+    numeroCuenta?: string | null;
+    titularCuenta?: string | null;
+    rucCooperativa?: string | null;
+  } | null>(null);
 
   useEffect(() => {
     async function cargarAsientos() {
@@ -82,6 +90,23 @@ export default function SelectorAsientos({
       cargarAsientos();
     }
   }, [rutaId]);
+
+  useEffect(() => {
+    async function cargarConfiguracion() {
+      try {
+        const response = await fetch('/api/configuracion');
+        if (!response.ok) {
+          throw new Error('No se pudo obtener la configuración bancaria');
+        }
+        const payload = await response.json();
+        setConfiguracion(payload?.data || null);
+      } catch (err) {
+        setConfiguracion(null);
+      }
+    }
+
+    cargarConfiguracion();
+  }, []);
 
   const cambiarPiso = (numeroPiso: number) => {
     setFloor(numeroPiso);
@@ -124,7 +149,7 @@ export default function SelectorAsientos({
     try {
       const requiereComprobante = metodoPago === "TRANSFERENCIA" || metodoPago === "DEPOSITO";
       if (requiereComprobante && !comprobanteUrl.trim()) {
-        throw new Error("Ingresa la URL del comprobante de pago");
+        throw new Error("Sube el comprobante de pago para continuar");
       }
 
       const response = await fetch("/api/boletos", {
@@ -160,11 +185,15 @@ export default function SelectorAsientos({
         });
         const pagoData = await pagoResponse.json().catch(() => null);
         if (!pagoResponse.ok) {
-          throw new Error(pagoData?.error || "El boleto se creo, pero no se pudo subir el comprobante");
+          throw new Error(pagoData?.error || "El boleto se creó, pero no se pudo subir el comprobante");
         }
       }
 
-      router.push(`/cliente/boletos/${data.id}`);
+      if (comprobanteUrl.trim()) {
+        router.push(`/cliente/pago-estado/${data.id}`);
+      } else {
+        router.push(`/cliente/boletos/${data.id}`);
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al continuar la compra");
@@ -371,16 +400,101 @@ export default function SelectorAsientos({
             </select>
             {(metodoPago === "TRANSFERENCIA" || metodoPago === "DEPOSITO") && (
               <>
-                <label className="block text-xs font-semibold text-gray-600" htmlFor="comprobanteUrl">
-                  URL del comprobante
+                <div className="rounded-xl border border-[var(--border)] bg-white p-4 shadow-sm mb-4">
+                  <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">
+                    Realiza la transferencia por el valor total y sube el comprobante
+                  </p>
+                  {configuracion ? (
+                    <div className="space-y-2 text-sm text-[var(--text-muted)]">
+                      <p>
+                        <span className="font-semibold text-black">Banco:</span> {configuracion.nombreBanco || 'Sin banco configurado'}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-black">Cuenta:</span> {configuracion.numeroCuenta || 'Sin número configurado'}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-black">Titular:</span> {configuracion.titularCuenta || 'Sin titular configurado'}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-black">RUC:</span> {configuracion.rucCooperativa || 'Sin RUC configurado'}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[var(--text-muted)]">No se encontraron datos bancarios de la cooperativa.</p>
+                  )}
+                </div>
+
+                <label className="block text-xs font-semibold text-gray-600" htmlFor="comprobanteFile">
+                  Adjuntar comprobante (jpg, png, webp, pdf) máximo 5MB
                 </label>
                 <input
-                  id="comprobanteUrl"
-                  value={comprobanteUrl}
-                  onChange={(event) => setComprobanteUrl(event.target.value)}
+                  id="comprobanteFile"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  onChange={async (event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+
+                    const isValidType = [
+                      'image/jpeg',
+                      'image/png',
+                      'image/webp',
+                      'application/pdf',
+                    ].includes(file.type);
+
+                    if (!isValidType) {
+                      setError('El comprobante debe ser JPG, PNG, WEBP o PDF');
+                      setComprobanteUrl('');
+                      setComprobanteFileName(null);
+                      setComprobantePreview(null);
+                      event.target.value = '';
+                      return;
+                    }
+
+                    if (file.size > 5 * 1024 * 1024) {
+                      setError('El comprobante no puede superar los 5MB');
+                      setComprobanteUrl('');
+                      setComprobanteFileName(null);
+                      setComprobantePreview(null);
+                      event.target.value = '';
+                      return;
+                    }
+
+                    setError(null);
+                    setComprobanteFileName(file.name);
+
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      const result = reader.result;
+                      if (typeof result === 'string') {
+                        setComprobanteUrl(result);
+                        if (file.type.startsWith('image/')) {
+                          setComprobantePreview(result);
+                        } else {
+                          setComprobantePreview(null);
+                        }
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }}
                   className="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-amber-500"
-                  placeholder="https://..."
                 />
+
+                {comprobanteFileName && (
+                  <div className="mt-3 rounded-xl border border-[var(--border)] bg-gray-50 p-3 text-sm text-[var(--text-muted)] shadow-sm">
+                    <p className="font-semibold text-[var(--text-primary)]">Archivo seleccionado:</p>
+                    <p>{comprobanteFileName}</p>
+                    {comprobantePreview ? (
+                      <img
+                        src={comprobantePreview}
+                        alt="Vista previa del comprobante"
+                        className="mt-3 max-h-48 w-full rounded-xl object-contain border border-gray-200"
+                      />
+                    ) : (
+                      <p className="mt-2 text-[11px] text-gray-500">Vista previa disponible solo para imágenes.</p>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
