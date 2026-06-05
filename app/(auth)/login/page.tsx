@@ -77,7 +77,7 @@ export default function LoginPage() {
             Viaja cómodo, viaja seguro.
           </h2>
           <p className="mt-4 text-blue-100/90 leading-relaxed text-sm">
-            Gestión inteligente de frecuencias, rutas y pasajes interprovinciales en tiempo real. Accede para controlar las operaciones de la cooperativa.
+            Gestión inteligente de frecuencias, rutas y boletos interprovinciales en tiempo real. Accede para controlar las operaciones de la cooperativa.
           </p>
         </div>
 
