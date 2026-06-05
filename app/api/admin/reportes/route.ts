@@ -19,16 +19,15 @@ export async function GET() {
     });
 
     const formateados = reportes.map((r: any) => ({
-      id: r.id,
-      tipo: r.tipo,
-      descripcion: r.descripcion,
-      createdAt: r.createdAt,
-      chofer: r.chofer,
-      ruta: r.ruta
-        ? `${r.ruta.frecuencia.ciudadOrigen} → ${r.ruta.frecuencia.ciudadDestino}`
-        : "Sin ruta",
-    }));
-
+  id: r.id,
+  tipo: r.tipo,
+  descripcion: r.descripcion,
+  createdAt: r.createdAt,
+  chofer: r.chofer,
+  ruta: r.ruta
+    ? `${r.ruta.frecuencia?.ciudadOrigen || "?"} → ${r.ruta.frecuencia?.ciudadDestino || "?"}`
+    : "Sin ruta (reporte de bus)",
+}));
     return NextResponse.json(formateados);
   } catch (error) {
     console.error("Error:", error);
