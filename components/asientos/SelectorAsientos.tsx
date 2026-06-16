@@ -35,6 +35,36 @@ function normalizeTipoPasajero(value?: string): string {
   }
 }
 
+function formatCategoria(categoria?: string): string {
+  if (!categoria) return "Normal";
+
+  switch (categoria.toUpperCase()) {
+    case "NORMAL":
+      return "Normal";
+    case "VIP":
+      return "VIP";
+    case "DISCAPACIDAD":
+      return "Discapacidad";
+    case "TERCERA_EDAD":
+      return "Tercera Edad";
+    case "MENOR_EDAD":
+      return "Menor de Edad";
+    default:
+      return categoria;
+  }
+}
+
+function seatMatchesPassengerType(seatCategory?: string, tipoPasajero?: string): boolean {
+  const categoria = seatCategory?.toUpperCase() || "";
+  const tipo = normalizeTipoPasajero(tipoPasajero);
+
+  if (tipo === "DISCAPACIDAD") return categoria.includes("DISCAPACIDAD");
+  if (tipo === "TERCERA_EDAD") return categoria.includes("TERCERA");
+  if (tipo === "MENOR_EDAD") return categoria.includes("MENOR");
+
+  return categoria.includes("NORMAL") || categoria.includes("VIP");
+}
+
 export default function SelectorAsientos({
   rutaId,
   tipoPasajero,
@@ -139,7 +169,8 @@ export default function SelectorAsientos({
     .sort((a, b) => a - b);
 
   const selectedSeatData = seats.find((seat) => seat.id === selectedSeat);
-
+  const selectedCount = selectedSeatData ? 1 : 0;
+  const totalPagar = selectedSeatData ? Number(selectedSeatData.precioBase) : 0;
   async function continuarCompra() {
     if (!selectedSeatData || !ruta) return;
 
@@ -219,8 +250,8 @@ export default function SelectorAsientos({
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow">
-      <h2 className="text-2xl font-bold mb-6 text-center text-black">
+    <div className="w-full max-w-3xl mx-auto p-3 sm:p-6 bg-white rounded-2xl shadow">
+      <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center text-black">
         Selecciona tu asiento
       </h2>
       {(tipoPasajero || precioFinal) && (
@@ -231,10 +262,10 @@ export default function SelectorAsientos({
       )}
 
       {/* Selector de Piso */}
-      <div className="flex justify-center gap-4 mb-6">
+      <div className="flex flex-wrap justify-center gap-3 mb-6">
         <button
           onClick={() => cambiarPiso(1)}
-          className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+          className={`px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base font-semibold transition-all ${
             floor === 1 ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
         >
@@ -242,7 +273,7 @@ export default function SelectorAsientos({
         </button>
         <button
           onClick={() => cambiarPiso(2)}
-          className={`px-4 py-2 rounded-xl font-semibold transition-all ${
+          className={`px-3 sm:px-4 py-2 rounded-xl text-sm sm:text-base font-semibold transition-all ${
             floor === 2 ? "bg-amber-500 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
         >
@@ -251,13 +282,13 @@ export default function SelectorAsientos({
       </div>
 
       <div className="flex justify-center mb-6">
-        <div className="w-32 h-10 bg-gray-300 rounded-t-3xl flex items-center justify-center text-sm font-medium text-gray-700">
+        <div className="w-24 sm:w-32 h-10 bg-gray-300 rounded-t-3xl flex items-center justify-center text-xs sm:text-sm font-medium text-gray-700">
           Conductor
         </div>
       </div>
 
       {/* Renderizado de filas del autobús */}
-      <div className="max-w-sm mx-auto bg-gray-50 border border-gray-200 rounded-3xl p-6 shadow-inner">
+      <div className="w-full max-w-sm mx-auto bg-gray-50 border border-gray-200 rounded-3xl p-3 sm:p-6 shadow-inner overflow-x-auto">
         <div className="flex flex-col gap-3">
           {sortedRows.map((filaNum) => {
             const asientosDeFila = rowsMap[filaNum];
@@ -274,42 +305,77 @@ export default function SelectorAsientos({
               const isSelected = selectedSeat === seat.id;
               const nombreCat = seat.categoria?.toLowerCase() || "";
               
-              const isVip = nombreCat.includes("vip");
-              const isDiscapacidad = nombreCat.includes("discapacidad") || nombreCat.includes("conci");
+              const cat = seat.categoria?.toUpperCase() || "";
 
-              let seatStyle = "bg-blue-50 text-blue-800 border border-blue-200 hover:bg-amber-50";
+              const isAllowed = seatMatchesPassengerType(seat.categoria, tipoPasajero);
 
-              if (seat.ocupado) {
-                seatStyle = "bg-red-200 text-red-700 cursor-not-allowed";
-              } else if (isSelected) {
-                seatStyle = "bg-amber-500 text-white scale-105";
-              } else if (isVip) {
-                seatStyle = "bg-purple-100 text-purple-800 border border-purple-300 hover:bg-purple-200";
-              } else if (isDiscapacidad) {
-                seatStyle = "bg-green-100 text-green-800 border border-green-300 hover:bg-green-200";
-              }
+                let seatStyle = "";
 
-              return (
-                <button
-                  key={seat.id}
-                  disabled={seat.ocupado}
-                  onClick={() => setSelectedSeat(seat.id)}
-                  className={`h-12 w-full rounded-xl font-bold text-xs flex flex-col items-center justify-center transition-all ${seatStyle}`}
-                >
+                  if (seat.ocupado) {
+                    seatStyle = "bg-red-400 text-white cursor-not-allowed opacity-70";
+                  } else if (!isAllowed) {
+                    seatStyle = "bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed opacity-70";
+                  } else if (isSelected) {
+                    seatStyle = "bg-gray-500 text-white scale-105 ring-2 ring-green-600 border-2 border-green-500";
+                  } else if (cat.includes("VIP")) {
+                    seatStyle = "bg-yellow-400 text-yellow-900 border border-yellow-500 hover:bg-yellow-300";
+                  } else if (cat.includes("DISCAPACIDAD")) {
+                    seatStyle = "bg-blue-400 text-white border border-blue-500 hover:bg-blue-300";
+                  } else if (cat.includes("TERCERA")) {
+                    seatStyle = "bg-purple-400 text-white border border-purple-500 hover:bg-purple-300";
+                  } else if (cat.includes("MENOR")) {
+                    seatStyle = "bg-orange-400 text-white border border-orange-500 hover:bg-orange-300";
+                  } else {
+                    seatStyle = "bg-green-400 text-white border border-green-500 hover:bg-green-300";
+                  }
+
+                  return (
+                    <button
+                      key={seat.id}
+                      disabled={seat.ocupado || !isAllowed}
+                      onClick={() => {
+                        if (!seat.ocupado && isAllowed) {
+                          setSelectedSeat((prev) => (prev === seat.id ? null : seat.id));
+                        }
+                      }}
+                      className={`group relative h-11 sm:h-12 w-full rounded-xl font-bold text-[10px] sm:text-xs flex flex-col items-center justify-center transition-all ${seatStyle}`}
+                    >
                   <div className="flex items-center gap-0.5">
                     <span>{seat.etiqueta}</span>
-                    {isVip && <span className="text-[7px] px-0.5 bg-purple-700 text-white rounded font-extrabold">V</span>}
-                    {isDiscapacidad && <span className="text-[7px] px-0.5 bg-green-700 text-white rounded font-extrabold">D</span>}
+                    {isSelected && (
+                      <span className="text-[8px] px-1 bg-green-600 text-white rounded-full font-extrabold">
+                        ✓
+                      </span>
+                    )}
+                    {cat.includes("VIP") && (
+                      <span className="text-[7px] px-0.5 bg-yellow-700 text-white rounded font-extrabold">V</span>
+                    )}
+                    {cat.includes("DISCAPACIDAD") && (
+                      <span className="text-[7px] px-0.5 bg-blue-700 text-white rounded font-extrabold">D</span>
+                    )}
+                    {cat.includes("TERCERA") && (
+                      <span className="text-[7px] px-0.5 bg-purple-700 text-white rounded font-extrabold">T</span>
+                    )}
+                    {cat.includes("MENOR") && (
+                      <span className="text-[7px] px-0.5 bg-orange-700 text-white rounded font-extrabold">M</span>
+                    )}
                   </div>
                   <span className="text-[9px] font-normal opacity-85">
                     ${Number(seat.precioBase).toFixed(2)}
                   </span>
+                  {!seat.ocupado && (
+                    <div className="pointer-events-none absolute -top-16 left-1/2 z-20 hidden w-32 -translate-x-1/2 rounded-lg bg-gray-900 px-2 py-1.5 text-[10px] font-medium text-white shadow-lg group-hover:block">
+                      <p className="font-bold">{seat.etiqueta}</p>
+                      <p>{formatCategoria(seat.categoria)}</p>
+                      <p>${Number(seat.precioBase).toFixed(2)}</p>
+                    </div>
+                  )}
                 </button>
               );
             };
 
             return (
-              <div key={`fila-${filaNum}`} className="grid grid-cols-5 gap-2 items-center">
+              <div key={`fila-${filaNum}`} className="grid grid-cols-5 gap-1 sm:gap-2 items-center min-w-[260px]">
                 {renderButton(asientoA)}
                 {renderButton(asientoB)}
 
@@ -327,32 +393,43 @@ export default function SelectorAsientos({
       </div>
 
       {/* Leyenda Dinámica */}
-      <div className="flex flex-wrap gap-4 mt-6 justify-center text-xs text-gray-600">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-blue-50 border border-blue-200" />
-          Normal
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-purple-100 border border-purple-200" />
-          VIP
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-green-100 border border-green-200" />
-          Discapacidad
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-amber-500" />
-          Seleccionado
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-red-200" />
-          Ocupado
-        </div>
-      </div>
+      <div className="flex flex-wrap gap-2 sm:gap-4 mt-6 justify-center text-[10px] sm:text-xs text-gray-600">
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-green-400" />
+    Normal
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-yellow-400" />
+    VIP
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-blue-400" />
+    Discapacidad
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-purple-400" />
+    Tercera Edad
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-orange-400" />
+    Menor de Edad
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-gray-500" />
+    Seleccionado
+  </div>
+  <div className="flex items-center gap-1.5">
+    <div className="w-3.5 h-3.5 rounded bg-red-400" />
+    Ocupado
+  </div>
+</div>
 
       {/* Panel Informativo de Selección */}
       {selectedSeatData && (
-        <div className="mt-6 max-w-sm mx-auto bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+        <div className="mt-6 max-w-sm mx-auto bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 shadow-sm">
+          <p className="text-xs font-semibold text-amber-700 mb-2">
+            Asientos seleccionados: {selectedCount}
+          </p>
           <p className="text-base font-medium text-gray-800">
             Asiento seleccionado:
             <span className="ml-2 text-amber-600 font-bold">{selectedSeatData.etiqueta}</span>
@@ -360,9 +437,18 @@ export default function SelectorAsientos({
           <p className="text-xs text-gray-600 mt-0.5">
             Categoría: <span className="font-semibold uppercase text-purple-700">{selectedSeatData.categoria}</span>
           </p>
-          <p className="text-xs text-gray-600 mt-0.5">
-            Precio de este asiento: <span className="font-bold text-gray-900">${Number(selectedSeatData.precioBase).toFixed(2)}</span>
-          </p>
+          <div className="mt-3 rounded-lg bg-white border border-amber-100 p-3 space-y-1">
+            <p className="text-xs text-gray-600 flex justify-between">
+              <span>Precio del asiento</span>
+              <span className="font-semibold text-gray-900">
+                ${Number(selectedSeatData.precioBase).toFixed(2)}
+              </span>
+            </p>
+            <p className="text-sm font-bold text-gray-900 flex justify-between border-t border-amber-100 pt-2 mt-2">
+              <span>Total a pagar</span>
+              <span className="text-amber-600">${totalPagar.toFixed(2)}</span>
+            </p>
+          </div>
           <div className="mt-4 space-y-3 text-left">
             <label className="block text-xs font-semibold text-gray-600" htmlFor="pasajeroNombre">
               Nombre del pasajero
